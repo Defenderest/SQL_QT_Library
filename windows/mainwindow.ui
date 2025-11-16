@@ -1,0 +1,4034 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>943</width>
+    <height>704</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Книгарня</string>
+  </property>
+  <property name="styleSheet">
+   <string>QMainWindow {
+    background-color: #ffffff; /* Змінено на білий */
+    color: #212529;
+}
+
+QWidget {
+    font-family: &quot;Segoe UI&quot;, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 10pt;
+}
+
+QTabWidget::pane {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    background-color: #ffffff;
+    border-radius: 0 0 4px 4px;
+    padding: 15px;
+}
+
+QTabBar::tab {
+    padding: 10px 18px;
+    margin-right: 2px;
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    color: #495057;
+    font-weight: 500;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background-color: #ffffff;
+    color: #495057; /* Змінено на темно-сірий */
+    font-weight: 600;
+    border-color: #dee2e6;
+    border-bottom: 1px solid #ffffff;
+    margin-bottom: -1px;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #dee2e6;
+    color: #212529;
+    border-color: #ced4da;
+}
+
+QTabWidget::tab-bar {
+    alignment: left;
+    left: 5px;
+}
+
+QLineEdit, QComboBox, QDateEdit, QSpinBox { /* Додано QSpinBox */
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #212529;
+    min-height: 34px;
+    font-size: 10pt;
+}
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
+    border-color: #adb5bd; /* Змінено на сірий */
+    box-shadow: 0 0 0 0.2rem rgba(173, 181, 189, 0.25); /* Змінено колір тіні на сірий */
+}
+
+QLineEdit::placeholder {
+    color: #6c757d;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #ced4da;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+QComboBox::down-arrow {
+     image: url(D:/projects/DB_Kurs/QtAPP/untitled/icons//down-arrow.png);
+     width: 10px;
+     height: 10px;
+}
+QComboBox QAbstractItemView {
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
+    selection-background-color: #e9ecef; /* Змінено на світло-сірий */
+    selection-color: #000;
+    padding: 4px;
+}
+
+QPushButton {
+    padding: 8px 14px;
+    background-color: #6c757d; /* Змінено на сірий */
+    color: white;
+    border: 1px solid #6c757d; /* Змінено на сірий */
+    border-radius: 8px; /* Збільшено заокруглення */
+    font-weight: 500;
+    min-height: 34px;
+    font-size: 10pt;
+    /* transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out; */ /* transition is not a standard Qt property */
+}
+QPushButton:hover {
+    background-color: #5a6268; /* Змінено на темніший сірий */
+    border-color: #545b62; /* Змінено на темніший сірий */
+}
+QPushButton:pressed {
+    background-color: #545b62; /* Змінено на темніший сірий */
+    border-color: #4e555b; /* Змінено на ще темніший сірий */
+}
+QPushButton:disabled {
+    background-color: #6c757d;
+    color: #ffffff;
+    border-color: #6c757d;
+    opacity: 0.65;
+}
+
+QPushButton#cartButton, QPushButton#wishlistButton, QPushButton#profileButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 6px;
+    border-radius: 8px; /* Збільшено заокруглення */
+    min-height: 36px; min-width: 36px;
+    max-width: 36px; max-height: 36px;
+    color: #495057;
+    font-size: 14pt;
+}
+QPushButton#cartButton:hover, QPushButton#wishlistButton:hover, QPushButton#profileButton:hover {
+    background-color: #e9ecef;
+    color: #212529;
+    border-color: #dee2e6;
+}
+QPushButton#cartButton:pressed, QPushButton#wishlistButton:pressed, QPushButton#profileButton:pressed {
+    background-color: #dee2e6;
+    border-color: #ced4da;
+}
+
+QPushButton#filterButton, QPushButton#sortButton, QPushButton#viewModeButton {
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    color: #495057;
+    min-width: 36px; max-width: 36px;
+    min-height: 34px; max-height: 34px;
+    padding: 6px;
+    border-radius: 8px; /* Збільшено заокруглення */
+    font-size: 12pt;
+}
+QPushButton#filterButton:hover, QPushButton#sortButton:hover, QPushButton#viewModeButton:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+QPushButton#filterButton:pressed, QPushButton#sortButton:pressed, QPushButton#viewModeButton:pressed {
+    background-color: #e9ecef;
+}
+QPushButton#viewModeButton:checked {
+    background-color: #e9ecef; /* Змінено на світло-сірий */
+    border-color: #ced4da; /* Змінено на сірий */
+    color: #495057; /* Змінено на темно-сірий */
+}
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+QScrollBar:vertical {
+    border: none;
+    background: #f1f3f5;
+    width: 6px;
+    margin: 0px 0px 0px 0px;
+    border-radius: 3px;
+}
+QScrollBar::handle:vertical {
+    background: #adb5bd;
+    min-height: 20px;
+    border-radius: 3px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #6c757d;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none; background: none; height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    border: none; background: #f1f3f5; height: 6px; margin: 0px 0px 0px 0px; border-radius: 3px;
+}
+QScrollBar::handle:horizontal {
+    background: #adb5bd; min-width: 20px; border-radius: 3px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #6c757d;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none; background: none; width: 0px;
+}
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QStatusBar {
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 9pt;
+    border-top: 1px solid #dee2e6;
+}
+
+QLabel {
+   color: #212529;
+   background-color: transparent;
+}
+QLabel#logoLabel {
+   font-size: 16pt;
+   font-weight: 600;
+   color: #000000;
+   padding-left: 0px;
+}
+/* Стиль для QLabel#bannerLabel більше не потрібен, оскільки банери встановлюються в коді */
+/* QLabel#bannerLabel { ... } */
+
+/* Стиль для міток банерів всередині QStackedWidget */
+QLabel#bannerImageLabel { /* Використовуємо objectName, встановлений в UI */
+   border-radius: 8px; /* Закруглені кути */
+   background-color: #e0e0e0; /* Фоновий колір, якщо зображення не завантажено */
+   /* background-image встановлюється в коді */
+}
+
+
+/* Стиль для самого QStackedWidget банера */
+QStackedWidget#bannerStackedWidget {
+    border-radius: 8px; /* Закруглені кути для контейнера */
+    /* Не встановлюємо тут border, щоб не було подвійної рамки */
+    /* Переконайтесь, що фон прозорий, щоб бачити мітки всередині */
+    background-color: transparent;
+}
+
+
+QLabel#categoryHeaderLabel, QLabel#bestsellerHeaderLabel, QLabel#newReleaseHeaderLabel,
+QLabel#classicsHeaderLabel, QLabel#fantasyHeaderLabel, QLabel#nonFictionHeaderLabel {
+   font-size: 14pt; /* Трохи збільшено для акценту */
+   font-weight: 600; /* Зроблено жирнішим */
+   color: #212529; /* Темніший колір */
+   margin-top: 25px; /* Збільшено верхній відступ */
+   margin-bottom: 15px; /* Збільшено нижній відступ */
+   padding-bottom: 3px;
+   border-bottom: none; /* Лінія прибрана */
+}
+QLabel#dateFilterLabel {
+    color: #495057;
+    font-size: 9pt;
+}
+
+/* Видалено стилі для QScrollArea#categoriesScrollArea QPushButton */
+
+QLineEdit#globalSearchLineEdit {
+    min-height: 30px; /* Ще зменшено висоту */
+    background-color: #f1f3f5; /* Світліший фон */
+    border: 1px solid #e9ecef; /* Дуже світла рамка */
+    border-radius: 15px; /* Округлі краї (половина висоти) */
+    padding-left: 15px; /* Відступ для тексту (і можливої іконки) */
+    padding-right: 15px;
+}
+QLineEdit#globalSearchLineEdit:focus {
+    border-color: #ced4da; /* Трохи темніша рамка при фокусі */
+    background-color: #ffffff; /* Білий фон при фокусі */
+}
+
+
+/* === Стилі для сторінок контенту === */
+QWidget#discoverPage,
+QWidget#booksPage,
+QWidget#authorsPage,
+QWidget#ordersPage,
+QWidget#pageProfile,
+QWidget#bookDetailsPage /* Додано сторінку деталей книги */ {
+    background-color: #ffffff; /* Білий фон для сторінок */
+}
+
+/* Стилі для вмісту сторінок (наприклад, ScrollArea) */
+QWidget#discoverScrollContents, /* Повернено білий фон */
+QWidget#booksContainerWidget,
+QWidget#authorsContainerWidget, /* Додано контейнер авторів */
+QWidget#ordersContainerWidget, /* Додано контейнер замовлень */
+QWidget#cartItemsContainerWidget, /* Додано контейнер кошика */
+QWidget#classicsRowWidget, /* Додано вміст горизонтальних секцій */
+QWidget#fantasyRowWidget,
+QWidget#nonFictionRowWidget {
+     background-color: #ffffff; /* Білий фон для всіх контейнерів */
+}
+
+
+/* === Стилі для сторінки &quot;Мої замовлення&quot; === */
+QLabel#ordersHeaderLabel {
+    font-size: 18pt;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 10px; /* Відступ знизу */
+}
+
+QWidget#orderCardWidget {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 18px 20px; /* Збільшено padding */
+    margin-bottom: 15px; /* Відступ між картками */
+}
+QWidget#orderCardWidget:hover {
+    border-color: #adb5bd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); /* Легка тінь при наведенні */
+}
+
+QLabel#orderIdLabel {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #343a40;
+}
+
+QLabel#orderDateLabel, QLabel#orderTotalLabel {
+    font-size: 10pt;
+    color: #495057;
+}
+
+QLabel#orderStatusLabel {
+    font-size: 10pt;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 12px; /* Округлі кути для статусу */
+    color: #ffffff; /* Білий текст за замовчуванням */
+    background-color: #6c757d; /* Сірий фон за замовчуванням */
+    min-width: 80px; /* Мінімальна ширина для вирівнювання */
+    qproperty-alignment: AlignCenter;
+}
+/* Стилі для різних статусів (можна додати більше) */
+QLabel#orderStatusLabel[status=&quot;new&quot;] { background-color: #0d6efd; } /* Синій */
+QLabel#orderStatusLabel[status=&quot;processing&quot;] { background-color: #ffc107; color: #343a40; } /* Жовтий */
+QLabel#orderStatusLabel[status=&quot;shipped&quot;] { background-color: #0dcaf0; color: #343a40; } /* Бірюзовий */
+QLabel#orderStatusLabel[status=&quot;delivered&quot;] { background-color: #198754; } /* Зелений */
+QLabel#orderStatusLabel[status=&quot;cancelled&quot;] { background-color: #dc3545; } /* Червоний */
+
+QPushButton#viewOrderDetailsButton {
+    /* Використовує загальний стиль QPushButton */
+    padding: 6px 12px; /* Менший padding */
+    font-size: 9pt; /* Менший шрифт */
+    min-height: 30px; /* Менша висота */
+    background-color: #e9ecef; /* Світло-сірий фон */
+    color: #495057; /* Темно-сірий текст */
+    border-color: #dee2e6;
+}
+QPushButton#viewOrderDetailsButton:hover {
+    background-color: #dee2e6;
+    border-color: #ced4da;
+    color: #212529;
+}
+
+QLabel#emptyOrdersLabel {
+    font-size: 14pt;
+    color: #6c757d;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    border-radius: 8px;
+    qproperty-alignment: AlignCenter;
+}
+
+/* === Стилі для бейджа статусу замовлення === */
+#orderStatusBadgeLabel {
+    background-color: #e0e0e0; /* Сірий фон за замовчуванням */
+    color: #333;             /* Темний текст */
+    border-radius: 8px;      /* Заокруглені кути */
+    padding: 4px 10px;       /* Внутрішні відступи (зверху/знизу, зліва/справа) */
+    min-width: 60px;         /* Мінімальна ширина */
+    font-weight: bold;       /* Жирний шрифт */
+    text-align: center;      /* Вирівнювання тексту по центру (дублює setAlignment) */
+    border: 1px solid #c0c0c0; /* Тонка рамка (опціонально) */
+}
+
+/* Стилі для різних статусів (використовуємо властивість 'status') */
+#orderStatusBadgeLabel[status=&quot;new&quot;] {
+    background-color: #bbdefb; /* Світло-блакитний */
+    color: #1e88e5;
+    border-color: #90caf9;
+}
+#orderStatusBadgeLabel[status=&quot;processing&quot;] {
+    background-color: #fff9c4; /* Світло-жовтий */
+    color: #fbc02d;
+    border-color: #fff59d;
+}
+#orderStatusBadgeLabel[status=&quot;shipped&quot;] {
+    background-color: #c8e6c9; /* Світло-зелений */
+    color: #388e3c;
+    border-color: #a5d6a7;
+}
+#orderStatusBadgeLabel[status=&quot;delivered&quot;] {
+    background-color: #d1c4e9; /* Світло-фіолетовий */
+    color: #5e35b1;
+    border-color: #b39ddb;
+}
+#orderStatusBadgeLabel[status=&quot;cancelled&quot;] {
+    background-color: #ffcdd2; /* Світло-червоний */
+    color: #d32f2f;
+    border-color: #ef9a9a;
+}
+#orderStatusBadgeLabel[status=&quot;unknown&quot;] {
+    background-color: #e0e0e0;
+    color: #757575;
+    border-color: #c0c0c0;
+}
+/* === Кінець стилів для бейджа статусу замовлення === */
+
+/* Явно встановлюємо білий фон для області прокрутки деталей книги та її вмісту */
+QScrollArea#bookDetailsScrollArea, QWidget#bookDetailsScrollContents {
+    background-color: #ffffff;
+    border: none; /* Прибираємо можливу рамку */
+}
+
+/* Об'єднаний стиль для всіх горизонтальних ScrollArea на головній сторінці */
+QScrollArea#classicsScrollArea,
+QScrollArea#fantasyScrollArea,
+QScrollArea#nonFictionScrollArea {
+    /* background-color, border-radius, padding видалено, щоб успадкувати від батька */
+    border: none; /* Прибираємо рамку */
+}
+
+/* Стилі для індикаторів банера */
+QWidget#bannerIndicatorWidget { /* Контейнер для індикаторів */
+    background-color: transparent; /* Прозорий фон */
+    margin-top: -15px; /* Піднімаємо індикатори трохи вище, накладаючи на банер */
+    padding-bottom: 5px; /* Невеликий відступ знизу */
+}
+
+QRadioButton::indicator {
+    width: 8px; /* Зменшено розмір */
+    height: 8px;
+    border-radius: 4px; /* Робимо його круглим */
+    background-color: rgba(255, 255, 255, 0.5); /* Напівпрозорий білий для неактивного */
+    border: 1px solid rgba(0, 0, 0, 0.2); /* Ледь помітна рамка */
+    margin: 0 4px; /* Трохи збільшено відступи */
+}
+
+QRadioButton::indicator:checked {
+    background-color: #ffffff; /* Колір активного індикатора (білий) */
+    border: 1px solid rgba(0, 0, 0, 0.4); /* Чіткіша рамка для активного */
+}
+
+/* Прибираємо текст радіокнопки */
+QRadioButton {
+    spacing: 0;
+    background: transparent;
+}
+
+/* === Стилі для кнопок категорій === */
+QWidget#categoriesWidget QPushButton { /* Націлюємось на кнопки всередині categoriesWidget */
+    background-color: #f0f2f5; /* Світліший сіро-блакитний фон */
+    color: #343a40; /* Темно-сірий текст */
+    border: 1px solid #dee2e6; /* Світла сіра рамка */
+    border-radius: 8px; /* Заокруглені кути */
+    padding: 12px 18px; /* Збільшені відступи */
+    font-size: 11pt; /* Трохи більший шрифт */
+    font-weight: 500; /* Середня жирність */
+    min-height: 60px; /* Мінімальна висота для кращого вигляду */
+    text-align: center; /* Вирівнювання тексту */
+    /* transition: all 0.2s ease-in-out; */ /* Плавний перехід (не підтримується стандартно) */
+}
+QWidget#categoriesWidget QPushButton:hover {
+    background-color: #e9ecef; /* Світліший фон при наведенні */
+    border-color: #ced4da;
+    /* transform: translateY(-2px); */ /* Невеликий підйом (не підтримується стандартно) */
+    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */ /* Тінь (не підтримується стандартно) */
+}
+QWidget#categoriesWidget QPushButton:pressed {
+    background-color: #dee2e6; /* Ще світліший фон при натисканні */
+    border-color: #adb5bd;
+    /* transform: translateY(0px); */
+    /* box-shadow: none; */
+}
+/* Можна додати :checked стиль, якщо кнопки checkable */
+/* QWidget#categoriesWidget QPushButton:checked { ... } */
+
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>25</number>
+    </property>
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="topMargin">
+     <number>15</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
+    <property name="bottomMargin">
+     <number>15</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="headerWidget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>55</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>5</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="logoLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>140</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string/>
+         </property>
+         <property name="text">
+          <string>Книгарня</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="globalSearchLineEdit">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>350</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>500</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="placeholderText">
+          <string>Пошук книг, авторів...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="cartButton">
+         <property name="toolTip">
+          <string>Кошик</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>:/icons/cart.png</normaloff>:/icons/cart.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="mainContentLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="sidebarFrame">
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame#sidebarFrame {
+    background-color: #f8f9fa; /* Змінено фон на світліший */
+    border-right: 1px solid #dee2e6;
+    border-top-right-radius: 8px; /* Додано заокруглення */
+    border-bottom-right-radius: 8px; /* Додано заокруглення */
+    /* border-left, border-top, border-bottom - не потрібні */
+}
+
+QPushButton#navHomeButton,
+QPushButton#navBooksButton,
+QPushButton#navAuthorsButton,
+QPushButton#navOrdersButton,
+QPushButton#navProfileButton {
+    padding: 10px 10px; /* Збільшено горизонтальний padding */
+    border: none;
+    border-radius: 8px; /* Збільшено заокруглення */
+    /* text-align: left; - Видалено, керується іконкою/текстом */
+    font-size: 11pt;
+    font-weight: 500;
+    color: #343a40;
+    background-color: transparent;
+    margin: 4px 0px; /* Забрано горизонтальні margin */
+    min-height: 38px;
+    /* Text visibility managed in C++ */
+}
+
+QPushButton#navHomeButton:hover,
+QPushButton#navBooksButton:hover,
+QPushButton#navAuthorsButton:hover,
+QPushButton#navOrdersButton:hover,
+QPushButton#navProfileButton:hover {
+    background-color: #e9ecef; /* Змінено на світло-сірий */
+    color: #495057; /* Змінено на темно-сірий */
+}
+
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: #6c757d; /* Змінено на сірий */
+    color: white;
+    font-weight: 600;
+}
+
+/* Стиль для кнопок в згорнутому стані */
+QPushButton#navHomeButton[collapsed=&quot;true&quot;],
+QPushButton#navBooksButton[collapsed=&quot;true&quot;],
+QPushButton#navAuthorsButton[collapsed=&quot;true&quot;],
+QPushButton#navOrdersButton[collapsed=&quot;true&quot;],
+QPushButton#navProfileButton[collapsed=&quot;true&quot;] {
+    /* text-align: center; - Видалено, іконка центрується автоматично */
+    padding: 10px 0; /* Вертикальний відступ, горизонтальний 0 */
+    border: none; /* Прибираємо всі рамки */
+    border-radius: 8px; /* Збільшено заокруглення */
+    margin-left: 4px; /* Додаємо невеликі відступи, щоб кнопка не прилипала до країв */
+    margin-right: 4px;
+    min-width: 42px; /* Ширина = collapsedWidth - margin-left - margin-right */
+    max-width: 42px;
+}
+    border-bottom: none;
+    margin-left: 0; /* Забираємо відступи, якщо є */
+    margin-right: 0;
+    min-width: 44px; /* Ширина = collapsedWidth - border-left - border-right */
+    max-width: 44px;
+}
+
+/* Стиль для НАВЕДЕННЯ на кнопки в згорнутому стані */
+QPushButton#navHomeButton[collapsed=&quot;true&quot;]:hover,
+QPushButton#navBooksButton[collapsed=&quot;true&quot;]:hover,
+QPushButton#navAuthorsButton[collapsed=&quot;true&quot;]:hover,
+QPushButton#navOrdersButton[collapsed=&quot;true&quot;]:hover,
+QPushButton#navProfileButton[collapsed=&quot;true&quot;]:hover {
+    background-color: #e9ecef; /* Світліший фон при наведенні */
+    /* border-left: 3px solid transparent; - Прибрано рамку */
+    border: none; /* Переконуємось, що рамки немає */
+}
+
+/* Стиль для АКТИВНОЇ кнопки в згорнутому стані */
+QPushButton#navHomeButton[collapsed=&quot;true&quot;]:checked,
+QPushButton#navBooksButton[collapsed=&quot;true&quot;]:checked,
+QPushButton#navAuthorsButton[collapsed=&quot;true&quot;]:checked,
+QPushButton#navOrdersButton[collapsed=&quot;true&quot;]:checked,
+QPushButton#navProfileButton[collapsed=&quot;true&quot;]:checked {
+    background-color: #adb5bd; /* Змінено на світліший сірий */
+    border: none; /* Переконуємось, що рамки немає */
+    color: white; /* Білий колір іконки (як у розгорнутому стані) */
+    font-weight: 600; /* Можна додати жирність, якщо потрібно */
+}
+</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Shape::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="sidebarLayout">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>20</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="navHomeButton">
+           <property name="text">
+            <string>Головна</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resourses.qrc">
+             <normaloff>:/icons/icons/home.png</normaloff>:/icons/icons/home.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="navBooksButton">
+           <property name="text">
+            <string>Книги</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resourses.qrc">
+             <normaloff>:/icons/icons/book.png</normaloff>:/icons/icons/book.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="navAuthorsButton">
+           <property name="text">
+            <string>Автори</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resourses.qrc">
+             <normaloff>:/icons/icons/users.png</normaloff>:/icons/icons/users.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="navOrdersButton">
+           <property name="text">
+            <string>Мої замовлення</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resourses.qrc">
+             <normaloff>:/icons/icons/shopping-bag.png</normaloff>:/icons/icons/shopping-bag.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="navProfileButton">
+           <property name="toolTip">
+            <string>Профіль</string>
+           </property>
+           <property name="text">
+            <string>Профіль</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resourses.qrc">
+             <normaloff>:/icons/icons/user.png</normaloff>:/icons/icons/user.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoExclusive">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="sidebarSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QStackedWidget" name="contentStackedWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="discoverPage">
+         <layout class="QVBoxLayout" name="discoverPageLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QScrollArea" name="discoverScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="discoverScrollContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>845</width>
+               <height>1880</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="discoverContentLayout">
+              <property name="spacing">
+               <number>25</number> <!-- Збільшено загальний вертикальний відступ -->
+              </property>
+              <property name="leftMargin">
+               <number>15</number>
+              </property>
+              <property name="topMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>15</number>
+              </property>
+              <property name="bottomMargin">
+               <number>20</number>
+              </property>
+              <item>
+               <widget class="QWidget" name="bannerMarginContainer" native="true">
+                <layout class="QVBoxLayout" name="bannerMarginLayout">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QStackedWidget" name="bannerStackedWidget">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>300</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>300</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">/* Стиль для QStackedWidget#bannerStackedWidget визначено вище */</string>
+                   </property>
+                   <property name="currentIndex">
+                    <number>2</number>
+                   </property>
+                   <widget class="QLabel" name="bannerImageLabel_2">
+                    <property name="styleSheet">
+                     <string notr="true">/* Стиль для QLabel#bannerLabel визначено вище */</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                    <property name="scaledContents">
+                     <bool>true</bool>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="bannerImageLabel_3">
+                    <property name="styleSheet">
+                     <string notr="true">/* Стиль для QLabel#bannerLabel визначено вище */</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                    <property name="scaledContents">
+                     <bool>true</bool>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="bannerImageLabel_1">
+                    <property name="styleSheet">
+                     <string notr="true">/* Стиль для QLabel#bannerLabel визначено вище */</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                    <property name="scaledContents">
+                     <bool>true</bool>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="bannerIndicatorWidget" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">/* Стиль bannerIndicatorWidget визначено вище */</string>
+                   </property>
+                   <layout class="QHBoxLayout" name="bannerIndicatorLayout">
+                    <property name="spacing">
+                     <number>6</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <spacer name="indicatorLeftSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Orientation::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="indicatorDot1">
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
+                      <property name="autoExclusive">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="indicatorDot2">
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="autoExclusive">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="indicatorDot3">
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="autoExclusive">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="indicatorRightSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Orientation::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="categoryHeaderLabel">
+                <property name="styleSheet">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>Популярні категорії</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="categoriesWidget" native="true">
+                <!-- Мінімальна висота більше не потрібна тут -->
+                <layout class="QGridLayout" name="categoriesLayout"> <!-- Повертаємо GridLayout -->
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>5</number> <!-- Відновлюємо верхній відступ -->
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="spacing">
+                  <number>20</number> <!-- Відновлюємо spacing -->
+                 </property>
+                 <!-- Розміщуємо кнопки в сітці 2x2 -->
+                 <item row="0" column="0">
+                  <widget class="QPushButton" name="fictionCategoryButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred"> <!-- Відновлюємо SizePolicy -->
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>80</height> <!-- Відновлюємо мінімальний розмір -->
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">/* Стилі тепер визначаються в QWidget#categoriesWidget QPushButton */</string>
+                   </property>
+                   <property name="text">
+                    <string>Художня
+література</string> <!-- Відновлюємо текст з переносом -->
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QPushButton" name="nonFictionCategoryButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>80</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="text">
+                    <string>Бізнес
+та наука</string> <!-- Відновлюємо текст з переносом -->
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0"> <!-- Новий рядок -->
+                  <widget class="QPushButton" name="childrenCategoryButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>80</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="text">
+                    <string>Дитячі
+книги</string> <!-- Відновлюємо текст з переносом -->
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1"> <!-- Новий рядок -->
+                  <widget class="QPushButton" name="educationCategoryButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>80</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="text">
+                    <string>Освіта</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- Видалено QScrollArea та її вміст -->
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="classicsHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 16px;
+font-weight: 600;
+color: #444444;
+margin-top: 20px;
+margin-bottom: 10px;
+padding-bottom: 5px;
+border-bottom: 1px solid #eeeeee;</string>
+                </property>
+                <property name="text">
+                 <string>📖 Класика</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QScrollArea" name="classicsScrollArea">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>340</height>
+                 </size>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::NoFrame</enum>
+                </property>
+                <property name="verticalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="classicsRowWidget">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>815</width>
+                   <height>340</height>
+                  </rect>
+                 </property>
+                 <layout class="QHBoxLayout" name="classicsRowLayout">
+                  <property name="spacing">
+                   <number>15</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="fantasyHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 16px;
+font-weight: 600;
+color: #444444;
+margin-top: 20px;
+margin-bottom: 10px;
+padding-bottom: 5px;
+border-bottom: 1px solid #eeeeee;</string>
+                </property>
+                <property name="text">
+                 <string>✨ Фентезі</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QScrollArea" name="fantasyScrollArea">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>340</height>
+                 </size>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::NoFrame</enum>
+                </property>
+                <property name="verticalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="fantasyRowWidget">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>815</width>
+                   <height>340</height>
+                  </rect>
+                 </property>
+                 <layout class="QHBoxLayout" name="fantasyRowLayout">
+                  <property name="spacing">
+                   <number>15</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="nonFictionHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 16px;
+font-weight: 600;
+color: #444444;
+margin-top: 20px;
+margin-bottom: 10px;
+padding-bottom: 5px;
+border-bottom: 1px solid #eeeeee;</string>
+                </property>
+                <property name="text">
+                 <string>🔬 Науково-популярне</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QScrollArea" name="nonFictionScrollArea">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>340</height>
+                 </size>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::NoFrame</enum>
+                </property>
+                <property name="verticalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="nonFictionRowWidget">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>815</width>
+                   <height>340</height>
+                  </rect>
+                 </property>
+                 <layout class="QHBoxLayout" name="nonFictionRowLayout">
+                  <property name="spacing">
+                   <number>15</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>10</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>10</number>
+                  </property>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <spacer name="discoverBottomSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Expanding</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="booksPage">
+         <layout class="QVBoxLayout" name="booksPageLayout">
+          <property name="spacing">
+           <number>16</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QWidget" name="booksFilterWidget" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>45</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="booksFilterLayout">
+             <property name="spacing">
+              <number>12</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <spacer name="booksFilterSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="filterButton">
+               <property name="toolTip">
+                <string>Фільтри</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resourses.qrc">
+                 <normaloff>:/icons/icons/filter.png</normaloff>:/icons/icons/filter.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>18</width>
+                 <height>18</height>
+                </size>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="booksScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="booksContainerWidget">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>94</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="booksContainerLayout">
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>10</number>
+              </property>
+              <property name="spacing">
+               <number>24</number>
+              </property>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="authorsPage">
+         <layout class="QVBoxLayout" name="authorsPageLayout">
+          <property name="spacing">
+           <number>16</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QWidget" name="authorsFilterWidget" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>45</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="authorsFilterLayout">
+             <property name="spacing">
+              <number>12</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <spacer name="authorSearchSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="authorsScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="authorsContainerWidget">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>94</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="authorsContainerLayout">
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>10</number>
+              </property>
+              <property name="spacing">
+               <number>24</number>
+              </property>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="ordersPage">
+         <layout class="QVBoxLayout" name="ordersPageLayout">
+          <property name="spacing">
+           <number>15</number>
+          </property>
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="ordersHeaderLabel">
+            <property name="styleSheet">
+             <string notr="true">/* Стиль визначено вище */</string>
+            </property>
+            <property name="text">
+             <string>Мої замовлення</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="ordersFilterWidget" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>45</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="ordersFilterLayout">
+             <property name="spacing">
+              <number>16</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="emptyOrdersLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="visible">
+             <bool>false</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">/* Стиль визначено вище */</string>
+            </property>
+            <property name="text">
+             <string>У вас ще немає замовлень.</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="ordersScrollArea">
+            <property name="styleSheet">
+             <string notr="true">QScrollArea { border: none; background-color: transparent; } /* Прибираємо рамку */</string>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="ordersContainerWidget">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>54</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QWidget#ordersContainerWidget { background-color: transparent; } /* Прозорий фон контейнера */</string>
+             </property>
+             <layout class="QVBoxLayout" name="ordersContentLayout">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>5</number>
+              </property>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="pageProfile">
+         <layout class="QVBoxLayout" name="profilePageLayout">
+          <property name="spacing">
+           <number>15</number>
+          </property>
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="profileHeaderLabel">
+            <property name="styleSheet">
+             <string notr="true">font-size: 18pt; font-weight: 600; color: #212529; margin-bottom: 15px;</string>
+            </property>
+            <property name="text">
+             <string>Мій профіль</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="profileTopSectionLayout">
+            <property name="spacing">
+             <number>20</number>
+            </property>
+            <property name="bottomMargin">
+             <number>15</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="profilePictureLabel">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>100</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>100</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QLabel {
+    background-color: #e9ecef; /* Світло-сірий фон */
+    border: 1px solid #dee2e6; /* Світла рамка */
+    border-radius: 50px; /* Робимо круглим */
+    color: #adb5bd; /* Колір іконки/тексту */
+    font-size: 40pt; /* Розмір іконки */
+    qproperty-alignment: AlignCenter;
+}</string>
+              </property>
+              <property name="text">
+               <string>👤</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="profileNameEmailLayout">
+              <property name="spacing">
+               <number>4</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="profileFullNameLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 16pt; font-weight: 600; color: #212529;</string>
+                </property>
+                <property name="text">
+                 <string>(Ім'я Прізвище)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="profileEmailDisplayLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 11pt; color: #6c757d;</string>
+                </property>
+                <property name="text">
+                 <string>(email@example.com)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="profileEmailAccountSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Fixed</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>8</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="profileJoinDateLayout">
+                <property name="spacing">
+                 <number>8</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_JoinDate">
+                  <property name="minimumSize">
+                   <size>
+                    <width>130</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>130</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">color: #6c757d; font-size: 9pt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Дата реєстрації:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="profileJoinDateDisplayLabel">
+                  <property name="styleSheet">
+                   <string notr="true">color: #495057; font-size: 10pt; font-weight: 500;</string>
+                  </property>
+                  <property name="text">
+                   <string>(завантаження...)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="joinDateSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="profileLoyaltyLayout">
+                <property name="spacing">
+                 <number>8</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_Loyalty">
+                  <property name="minimumSize">
+                   <size>
+                    <width>130</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>130</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">color: #6c757d; font-size: 9pt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Програма лояльності:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="profileLoyaltyDisplayLabel">
+                  <property name="styleSheet">
+                   <string notr="true">color: #495057; font-size: 10pt; font-weight: 500;</string>
+                  </property>
+                  <property name="text">
+                   <string>(завантаження...)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="loyaltySpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="profilePointsLayout">
+                <property name="spacing">
+                 <number>8</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_Points">
+                  <property name="minimumSize">
+                   <size>
+                    <width>130</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>130</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">color: #6c757d; font-size: 9pt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Бали лояльності:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="profilePointsDisplayLabel">
+                  <property name="styleSheet">
+                   <string notr="true">color: #495057; font-size: 10pt; font-weight: 500;</string>
+                  </property>
+                  <property name="text">
+                   <string>(завантаження...)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="pointsSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <spacer name="profileNameEmailSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="profileTopSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="profileButtonsVerticalLayout">
+              <item>
+               <widget class="QPushButton" name="editProfileButton">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>52</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Редагувати</string>
+                </property>
+                <property name="icon">
+                 <iconset resource="resourses.qrc">
+                  <normaloff>:/icons/icons/edit.png</normaloff>:/icons/icons/edit.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="saveProfileButton">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>52</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">/* Можна додати стиль для кнопки збереження, наприклад, зелений */
+QPushButton#saveProfileButton {
+    background-color: #198754; /* Зелений */
+    border-color: #198754;
+}
+QPushButton#saveProfileButton:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+QPushButton#saveProfileButton:pressed {
+    background-color: #146c43;
+    border-color: #13653f;
+}</string>
+                </property>
+                <property name="text">
+                 <string>Зберегти</string>
+                </property>
+                <property name="icon">
+                 <iconset resource="resourses.qrc">
+                  <normaloff>:/icons/icons/save.png</normaloff>:/icons/icons/save.png</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="Line" name="profileSeparator1">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="profileDetailsWidget" native="true">
+            <layout class="QGridLayout" name="profileDetailsLayout">
+             <property name="horizontalSpacing">
+              <number>15</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>10</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_FirstName">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color: #495057;</string>
+               </property>
+               <property name="text">
+                <string>Ім'я:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="profileFirstNameLineEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Введіть ім'я</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_LastName">
+               <property name="styleSheet">
+                <string notr="true">color: #495057;</string>
+               </property>
+               <property name="text">
+                <string>Прізвище:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="profileLastNameLineEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Введіть прізвище</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_Phone">
+               <property name="styleSheet">
+                <string notr="true">color: #495057;</string>
+               </property>
+               <property name="text">
+                <string>Телефон:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="profilePhoneLineEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Введіть номер телефону</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_Address">
+               <property name="styleSheet">
+                <string notr="true">color: #495057;</string>
+               </property>
+               <property name="text">
+                <string>Адреса:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLineEdit" name="profileAddressLineEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Введіть адресу</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="profileVerticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="bookDetailsPage">
+         <layout class="QVBoxLayout" name="outerBookDetailsLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QScrollArea" name="bookDetailsScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="bookDetailsScrollContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>574</width>
+               <height>1063</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="bookDetailsPageLayout">
+              <property name="spacing">
+               <number>20</number>
+              </property>
+              <property name="leftMargin">
+               <number>30</number>
+              </property>
+              <property name="topMargin">
+               <number>25</number>
+              </property>
+              <property name="rightMargin">
+               <number>30</number>
+              </property>
+              <property name="bottomMargin">
+               <number>25</number>
+              </property>
+              <item>
+               <layout class="QHBoxLayout" name="bookDetailsHeaderLayout">
+                <property name="spacing">
+                 <number>30</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="bookDetailCoverLabel">
+                  <property name="minimumSize">
+                   <size>
+                    <width>220</width>
+                    <height>310</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>220</width>
+                    <height>310</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: #f0f0f0; /* Світліший фон */
+border: 1px solid #e0e0e0; /* Світліша рамка */
+border-radius: 6px; /* Трохи більше заокруглення */
+/* Додаємо тінь для об'єму */
+box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+</string>
+                  </property>
+                  <property name="text">
+                   <string>(Обкладинка)</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QVBoxLayout" name="bookDetailsInfoLayout">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="bookDetailTitleLabel">
+                    <property name="cursor">
+                     <cursorShape>UpArrowCursor</cursorShape>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 24pt; /* Ще збільшено шрифт */
+font-weight: 600;
+color: #1a1a1a; /* Дуже темний колір */
+margin-bottom: 4px; /* Зменшено відступ знизу */</string>
+                    </property>
+                    <property name="text">
+                     <string>(Назва книги)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailAuthorLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 16pt; /* Збільшено шрифт автора */
+color: #5a5a5a; /* Світліший сірий */
+margin-bottom: 20px; /* Збільшено відступ знизу */</string>
+                    </property>
+                    <property name="text">
+                     <string>(Автор)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailGenreLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 10pt; color: #6c757d;</string>
+                    </property>
+                    <property name="text">
+                     <string>Жанр: (жанр)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailPublisherLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 10pt; color: #6c757d;</string>
+                    </property>
+                    <property name="text">
+                     <string>Видавництво: (видавництво)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailYearLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 10pt; color: #6c757d;</string>
+                    </property>
+                    <property name="text">
+                     <string>Рік видання: (рік)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailPagesLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 10pt; color: #6c757d;</string>
+                    </property>
+                    <property name="text">
+                     <string>Сторінок: (кількість)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailIsbnLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 10pt; color: #6c757d; margin-bottom: 15px;</string>
+                    </property>
+                    <property name="text">
+                     <string>ISBN: (isbn)</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_2">
+                    <property name="orientation">
+                     <enum>Qt::Orientation::Vertical</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Policy::MinimumExpanding</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>10</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="bookDetailPriceLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 20pt; /* Збільшено шрифт */
+font-weight: bold;
+color: #343a40; /* Змінено на темно-сірий */
+margin-bottom: 10px; /* Додано відступ */</string>
+                    </property>
+                    <property name="text">
+                     <string>(Ціна) грн</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="bookDetailAddToCartButton">
+                    <property name="minimumSize">
+                     <size>
+                      <width>230</width>
+                      <height>60</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>200</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">/* Використовуємо стандартний стиль QPushButton, але можна додати акцент */
+background-color: #198754; /* Темніший зелений */
+border-color: #198754;
+color: white;
+font-size: 12pt; /* Трохи більший шрифт */
+font-weight: 500;
+padding: 12px 20px; /* Збільшено padding */
+border-radius: 8px; /* Збільшено заокруглення */
+</string>
+                    </property>
+                    <property name="text">
+                     <string>Додати в кошик</string>
+                    </property>
+                    <property name="icon">
+                     <iconset>
+                      <normaloff>icons/add-to-cart.png</normaloff>icons/add-to-cart.png</iconset>
+                    </property>
+                    <property name="iconSize">
+                     <size>
+                      <width>18</width>
+                      <height>18</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_4">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 14pt; font-weight: 600; color: #333; margin-bottom: 5px;</string>
+                </property>
+                <property name="text">
+                 <string>Опис</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="bookDetailDescriptionLabel">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">color: #212529; /* Стандартний чорний текст */
+font-size: 11pt; /* Трохи більший шрифт для опису */
+line-height: 1.6; /* Збільшуємо міжрядковий інтервал */
+/* background-color, border, padding - не потрібні для QLabel в цьому випадку */
+</string>
+                </property>
+                <property name="text">
+                 <string>(Опис книги завантажується...)</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignJustify|Qt::AlignmentFlag::AlignTop</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="Line" name="separatorLine2">
+                <property name="styleSheet">
+                 <string notr="true">background-color: #e0e0e0;</string>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="Line" name="addCommentSeparator">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="addCommentHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 14pt; font-weight: 600; color: #343a40; margin-top: 15px; margin-bottom: 8px;</string>
+                </property>
+                <property name="text">
+                 <string>Залишити відгук</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="alreadyCommentedLabel">
+                <property name="visible">
+                 <bool>false</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">font-style: italic; color: #6c757d; padding: 5px 0;</string>
+                </property>
+                <property name="text">
+                 <string>Ви вже залишили відгук для цієї книги.</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="newCommentTextEdit">
+                <property name="styleSheet">
+                 <string notr="true">QLineEdit { /* Стиль скопійовано з globalSearchLineEdit */
+    min-height: 30px; /* Висота як у пошуку */
+    background-color: #f1f3f5; /* Світліший фон */
+    border: 1px solid #e9ecef; /* Дуже світла рамка */
+    border-radius: 15px; /* Округлі краї (половина висоти) */
+    padding-left: 15px; /* Відступ для тексту */
+    padding-right: 15px;
+    color: #212529;
+    font-size: 10pt;
+}
+QLineEdit:focus {
+    border-color: #ced4da; /* Трохи темніша рамка при фокусі */
+    background-color: #ffffff; /* Білий фон при фокусі */
+}</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Напишіть ваш відгук...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="addCommentControlsLayout">
+                <property name="spacing">
+                 <number>15</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="ratingLabel">
+                  <property name="text">
+                   <string>Ваша оцінка:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="StarRatingWidget" name="newCommentStarRatingWidget" native="true">
+                  <property name="minimumSize">
+                   <size>
+                    <width>120</width>
+                    <height>25</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>120</width>
+                    <height>25</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Виберіть вашу оцінку (0-5 зірок)</string>
+                  </property>
+                  <property name="readOnly" stdset="0">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="addCommentSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="sendCommentButton">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>52</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">/* Можна додати окремий стиль для кнопки відправки */</string>
+                  </property>
+                  <property name="text">
+                   <string>Відправити відгук</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QLabel" name="reviewsHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 16pt;
+font-weight: 600;
+color: #343a40;
+margin-top: 15px; /* Збільшено відступ зверху */
+margin-bottom: 8px;</string>
+                </property>
+                <property name="text">
+                 <string>Відгуки та Рейтинг</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="StarRatingWidget" name="bookDetailStarRatingWidget" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>120</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Середній рейтинг книги</string>
+                </property>
+                <property name="readOnly" stdset="0">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="commentsListLayout">
+                <property name="spacing">
+                 <number>10</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+               </layout>
+              </item>
+              <item>
+               <widget class="Line" name="similarBooksSeparator">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="similarBooksWidget" native="true">
+                <property name="visible">
+                 <bool>false</bool>
+                </property>
+                <layout class="QVBoxLayout" name="similarBooksOuterLayout">
+                 <property name="spacing">
+                  <number>10</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>10</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="similarBooksHeaderLabel">
+                   <property name="styleSheet">
+                    <string notr="true">font-size: 14pt; font-weight: 600; color: #333; margin-bottom: 5px;</string>
+                   </property>
+                   <property name="text">
+                    <string>Схожі книги</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QScrollArea" name="similarBooksScrollArea">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>340</height>
+                    </size>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::Shape::NoFrame</enum>
+                   </property>
+                   <property name="verticalScrollBarPolicy">
+                    <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="similarBooksContainerWidget">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>100</width>
+                      <height>340</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: transparent;</string>
+                    </property>
+                    <layout class="QHBoxLayout" name="similarBooksLayout">
+                     <property name="spacing">
+                      <number>15</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>10</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>10</number>
+                     </property>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="cartPage">
+         <property name="styleSheet">
+          <string notr="true">/* Стилі для елементів кошика */
+QWidget#cartItemFrame {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px; /* Відступ між картками */
+}
+
+QWidget#cartItemFrame:hover {
+    border-color: #adb5bd;
+}
+
+QLabel#cartItemCoverLabel {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    color: #6c757d;
+    min-width: 60px;
+    max-width: 60px;
+    min-height: 85px;
+    max-height: 85px;
+    qproperty-alignment: AlignCenter; /* Центруємо текст &quot;Фото&quot; */
+}
+
+QLabel#cartItemTitleLabel {
+    font-size: 12pt;
+    font-weight: 600;
+    color: #212529;
+}
+
+QLabel#cartItemAuthorLabel {
+    font-size: 10pt;
+    color: #6c757d;
+}
+
+QLabel#cartItemPriceLabel, QLabel#cartItemSubtotalLabel {
+    font-size: 11pt;
+    font-weight: 500;
+    color: #343a40;
+}
+
+QSpinBox#cartQuantitySpinBox {
+    min-width: 55px; /* Зменшено ширину */
+    max-width: 55px; /* Зменшено ширину */
+    min-height: 30px; /* Зменшено висоту */
+    max-height: 30px; /* Зменшено висоту */
+    background-color: #ffffff;
+    color: #212529;
+    border: 1px solid #ced4da; /* Залишаємо рамку */
+    border-radius: 15px; /* Додаємо заокруглення (половина висоти) */
+    padding: 0px 5px; /* Зменшуємо внутрішні відступи */
+    font-size: 10pt; /* Залишаємо розмір шрифту */
+}
+
+/* Стилі для кнопок SpinBox (стрілки вгору/вниз) */
+QSpinBox#cartQuantitySpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px; /* Ширина кнопки */
+    height: 15px; /* Висота кнопки (половина висоти SpinBox) */
+    border-left: 1px solid #ced4da;
+    border-bottom: 1px solid #ced4da; /* Додаємо нижню межу для розділення */
+    border-top-right-radius: 15px; /* Заокруглення верхнього правого кута */
+    background-color: #f8f9fa; /* Світлий фон для кнопки */
+}
+QSpinBox#cartQuantitySpinBox::up-button:hover {
+    background-color: #e9ecef; /* Світліший фон при наведенні */
+}
+QSpinBox#cartQuantitySpinBox::up-arrow {
+    image: url(D:/projects/DB_Kurs/QtAPP/untitled/icons/up-arrow.png); /* Потрібно додати іконку */
+    width: 8px;
+    height: 8px;
+}
+
+QSpinBox#cartQuantitySpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    height: 15px;
+    border-left: 1px solid #ced4da;
+    border-bottom-right-radius: 15px; /* Заокруглення нижнього правого кута */
+    background-color: #f8f9fa;
+}
+QSpinBox#cartQuantitySpinBox::down-button:hover {
+    background-color: #e9ecef;
+}
+QSpinBox#cartQuantitySpinBox::down-arrow {
+    image: url(D:/projects/DB_Kurs/QtAPP/untitled/icons/down-arrow.png); /* Потрібно додати іконку */
+    width: 8px;
+    height: 8px;
+}
+
+
+QPushButton#cartRemoveButton {
+    background-color: transparent;
+    border: none;
+    color: #dc3545; /* Червоний колір */
+    font-size: 16pt; /* Більший розмір іконки/тексту */
+    font-weight: bold;
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    padding: 0; /* Забираємо внутрішні відступи */
+    /* qproperty-text видалено, використовуємо icon */
+}
+QPushButton#cartRemoveButton { /* Додано окремий стиль для іконки */
+    icon: url(D:/projects/DB_Kurs/QtAPP/untitled/icons/trash.png);
+    icon-size: 18px 18px; /* Розмір іконки */
+}
+QPushButton#cartRemoveButton:hover {
+    color: #a02030; /* Темніший червоний при наведенні */
+    background-color: #f8d7da; /* Дуже світлий червоний фон */
+    border-radius: 4px;
+}
+
+QWidget#cartTotalsWidget {
+    background-color: #f8f9fa; /* Світлий фон для блоку суми */
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px 15px; /* Зменшено вертикальний та горизонтальний padding */
+    margin-top: 10px; /* Зменшено відступ зверху */
+}
+
+QLabel#cartTotalTextLabel {
+    font-size: 14pt;
+    font-weight: 600;
+    color: #212529;
+}
+
+QPushButton#placeOrderButton {
+    /* Використовує загальний стиль QPushButton, але можна зробити його більш виразним */
+    background-color: #198754; /* Зелений */
+    border-color: #198754;
+    padding: 8px 18px; /* Зменшено padding */
+    font-size: 11pt; /* Зменшено шрифт */
+    font-weight: 500;
+    min-height: 36px; /* Зменшено висоту до стандартної */
+}
+QPushButton#placeOrderButton:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+QPushButton#placeOrderButton:pressed {
+    background-color: #146c43;
+    border-color: #13653f;
+}
+
+QLabel#emptyCartLabel {
+    font-size: 14pt;
+    color: #6c757d;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    border-radius: 8px;
+    qproperty-alignment: AlignCenter; /* Центруємо текст */
+}
+</string>
+         </property>
+         <layout class="QVBoxLayout" name="cartPageLayout">
+          <property name="spacing">
+           <number>15</number>
+          </property>
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="cartHeaderLabel">
+            <property name="styleSheet">
+             <string notr="true">font-size: 18pt; font-weight: 600; color: #212529; margin-bottom: 10px;</string>
+            </property>
+            <property name="text">
+             <string>🛒 Ваш кошик</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="cartScrollArea">
+            <property name="styleSheet">
+             <string notr="true">QScrollArea { border: none; background-color: transparent; } /* Прибираємо рамку */</string>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="cartItemsContainerWidget">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>54</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QWidget#cartItemsContainerWidget { background-color: transparent; } /* Прозорий фон контейнера */</string>
+             </property>
+             <layout class="QVBoxLayout" name="cartItemsLayout">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>5</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>5</number>
+              </property>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="cartTotalsWidget" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>120</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="cartFooterLayout">
+             <property name="spacing">
+              <number>20</number>
+             </property>
+             <item>
+              <spacer name="cartFooterSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="cartTotalTextLabel">
+               <property name="styleSheet">
+                <string notr="true">/* Використовує стиль cartTotalTextLabel */</string>
+               </property>
+               <property name="text">
+                <string>Загальна сума: 0.00 грн</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="placeOrderButton">
+               <property name="minimumSize">
+                <size>
+                 <width>180</width>
+                 <height>54</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">/* Використовує стиль placeOrderButton */</string>
+               </property>
+               <property name="text">
+                <string>Оформити замовлення</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="authorDetailsPage">
+         <layout class="QVBoxLayout" name="outerAuthorDetailsLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QScrollArea" name="authorDetailsScrollArea">
+            <property name="styleSheet">
+             <string notr="true">QScrollArea { border: none; background-color: #ffffff; }</string>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="authorDetailsScrollContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>513</width>
+               <height>523</height>
+              </rect>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QWidget#authorDetailsScrollContents { background-color: #ffffff; }</string>
+             </property>
+             <layout class="QVBoxLayout" name="authorDetailsPageLayout">
+              <property name="spacing">
+               <number>20</number>
+              </property>
+              <property name="leftMargin">
+               <number>30</number>
+              </property>
+              <property name="topMargin">
+               <number>25</number>
+              </property>
+              <property name="rightMargin">
+               <number>30</number>
+              </property>
+              <property name="bottomMargin">
+               <number>25</number>
+              </property>
+              <item>
+               <layout class="QHBoxLayout" name="authorDetailsHeaderLayout">
+                <property name="spacing">
+                 <number>30</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="authorDetailPhotoLabel">
+                  <property name="minimumSize">
+                   <size>
+                    <width>180</width>
+                    <height>180</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>180</width>
+                    <height>180</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: #e0e0e0; border-radius: 90px; /* Кругле фото */ border: 1px solid #ccc;</string>
+                  </property>
+                  <property name="text">
+                   <string>(Фото)</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QVBoxLayout" name="authorDetailsNameLayout">
+                  <property name="spacing">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="authorDetailNameLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 22pt; font-weight: 600; color: #1a1a1a;</string>
+                    </property>
+                    <property name="text">
+                     <string>(Ім'я Автора)</string>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="authorDetailNationalityLabel">
+                    <property name="styleSheet">
+                     <string notr="true">font-size: 12pt; color: #6c757d;</string>
+                    </property>
+                    <property name="text">
+                     <string>(Національність, Роки життя)</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="authorNameSpacer">
+                    <property name="orientation">
+                     <enum>Qt::Orientation::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <spacer name="authorHeaderSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="Line" name="authorSeparator1">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="biographyHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 14pt; font-weight: 600; color: #333; margin-bottom: 5px;</string>
+                </property>
+                <property name="text">
+                 <string>Біографія</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="authorDetailBiographyLabel">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">color: #212529; font-size: 11pt; line-height: 1.6;</string>
+                </property>
+                <property name="text">
+                 <string>(Біографія завантажується...)</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignJustify|Qt::AlignmentFlag::AlignTop</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="Line" name="authorSeparator2">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="authorBooksHeaderLabel">
+                <property name="styleSheet">
+                 <string notr="true">font-size: 14pt; font-weight: 600; color: #333; margin-bottom: 10px;</string>
+                </property>
+                <property name="text">
+                 <string>Книги автора</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="authorBooksContainerWidget" native="true">
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;</string>
+                </property>
+                <layout class="QGridLayout" name="authorBooksLayout">
+                 <property name="spacing">
+                  <number>24</number>
+                 </property>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <spacer name="authorDetailsVerticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>15</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="orderDetailsPanel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>0</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame#orderDetailsPanel {
+    background-color: #fdfdff; /* Slightly different background */
+    border-left: 1px solid #dee2e6;
+}
+QLabel {
+    margin-bottom: 2px; /* Small spacing below labels */
+}
+QLabel#orderDetailsTitleLabel {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #343a40;
+}
+QPushButton#closeOrderDetailsButton {
+    min-width: 24px; max-width: 24px;
+    min-height: 24px; max-height: 24px;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    color: #6c757d;
+    font-size: 14pt;
+    font-weight: bold;
+    qproperty-text: &quot;✕&quot;; /* Close symbol */
+}
+QPushButton#closeOrderDetailsButton:hover {
+    color: #dc3545; /* Red on hover */
+    background-color: #f8d7da;
+    border-radius: 4px;
+}
+QScrollArea#orderDetailsScrollArea {
+    border: none;
+    background-color: transparent;
+}
+QWidget#orderDetailsScrollContents {
+    background-color: transparent;
+}
+QLabel.headerLabel { /* Style for Items/Status headers */
+    font-size: 11pt;
+    font-weight: 500;
+    color: #495057;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 3px;
+}
+QLabel.orderItemLabel, QLabel.orderStatusHistoryLabel {
+    font-size: 10pt;
+    color: #212529;
+    margin-bottom: 4px;
+}
+</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Shape::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="orderDetailsPanelLayout">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>10</number>
+         </property>
+         <property name="topMargin">
+          <number>10</number>
+         </property>
+         <property name="rightMargin">
+          <number>10</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="orderDetailsHeaderLayout">
+           <property name="spacing">
+            <number>6</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="orderDetailsTitleLabel">
+             <property name="text">
+              <string>Деталі замовлення</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="orderDetailsHeaderSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="closeOrderDetailsButton">
+             <property name="toolTip">
+              <string>Закрити панель</string>
+             </property>
+             <property name="text">
+              <string>✕</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QScrollArea" name="orderDetailsScrollArea">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="orderDetailsScrollContents">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>121</width>
+              <height>508</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="orderDetailsContentsLayout">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>5</number>
+             </property>
+             <property name="topMargin">
+              <number>5</number>
+             </property>
+             <property name="rightMargin">
+              <number>5</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="orderDetailsIdLabel">
+               <property name="text">
+                <string>ID: (завантаження...)</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="orderDetailsDateLabel">
+               <property name="text">
+                <string>Дата: (завантаження...)</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="orderDetailsTotalLabel">
+               <property name="text">
+                <string>Сума: (завантаження...)</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="orderDetailsShippingLabel">
+               <property name="text">
+                <string>Доставка: (завантаження...)</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="orderDetailsPaymentLabel">
+               <property name="text">
+                <string>Оплата: (завантаження...)</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_2">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="itemsHeaderLabel">
+               <property name="text">
+                <string>Товари</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>headerLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="itemsContainerWidget" native="true">
+               <layout class="QVBoxLayout" name="orderDetailsItemsLayout">
+                <property name="spacing">
+                 <number>4</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_3">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="statusHeaderLabel">
+               <property name="text">
+                <string>Історія статусів</string>
+               </property>
+               <property name="class" stdset="0">
+                <string>headerLabel</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="statusContainerWidget" native="true">
+               <layout class="QVBoxLayout" name="orderDetailsStatusLayout">
+                <property name="spacing">
+                 <number>4</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <spacer name="orderDetailsVerticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="filterPanel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>0</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame#filterPanel {
+    background-color: #f8f9fa; /* Світлий фон */
+    border-left: 1px solid #dee2e6; /* Лінія розділення */
+}
+QLabel { /* Стиль для заголовків фільтрів */
+    font-weight: 600;
+    color: #495057;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+QListWidget { /* Стиль для списків */
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #ffffff;
+    padding: 5px;
+}
+QListWidget::item {
+    padding: 4px 0px; /* Відступи для елементів списку */
+}
+QListWidget::item:selected {
+    background-color: #e9ecef; /* Колір виділеного елемента */
+    color: #000;
+    border-radius: 3px;
+}
+/* Стилі для інших віджетів (QDoubleSpinBox, QCheckBox, QPushButton) успадковуються */
+</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Shape::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="filterPanelLayout">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>15</number>
+         </property>
+         <property name="topMargin">
+          <number>15</number>
+         </property>
+         <property name="rightMargin">
+          <number>15</number>
+         </property>
+         <property name="bottomMargin">
+          <number>15</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="filterHeaderLabel">
+           <property name="styleSheet">
+            <string notr="true">font-size: 14pt; font-weight: 600; color: #343a40; margin-bottom: 10px;</string>
+           </property>
+           <property name="text">
+            <string>Фільтри</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="genreFilterLabel">
+           <property name="text">
+            <string>Жанр:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QListWidget" name="genreFilterListWidget">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>100</height>
+            </size>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="languageFilterLabel">
+           <property name="text">
+            <string>Мова:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QListWidget" name="languageFilterListWidget">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>60</height>
+            </size>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="priceFilterLabel">
+           <property name="text">
+            <string>Ціна (грн):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="priceRangeLayout">
+           <property name="spacing">
+            <number>8</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="minPriceValueLabel">
+             <property name="minimumSize">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="priceRangeSlider" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>25</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="maxPriceValueLabel">
+             <property name="minimumSize">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>1000</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="inStockFilterCheckBox">
+           <property name="text">
+            <string>Тільки в наявності</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="filterVerticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="filterButtonsLayout">
+           <item>
+            <widget class="QPushButton" name="resetFiltersButton">
+             <property name="styleSheet">
+              <string notr="true">/* Можна додати стиль для кнопки скидання */
+QPushButton {
+    background-color: #f8f9fa; /* Світлий фон */
+    color: #6c757d; /* Сірий текст */
+    border: 1px solid #ced4da;
+}
+QPushButton:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}</string>
+             </property>
+             <property name="text">
+              <string>Скинути</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="applyFiltersButton">
+             <property name="styleSheet">
+              <string notr="true">/* Можна додати стиль для кнопки застосування */
+QPushButton {
+    background-color: #0d6efd; /* Синій */
+    border-color: #0d6efd;
+    color: white;
+}
+QPushButton:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}</string>
+             </property>
+             <property name="text">
+              <string>Застосувати</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>StarRatingWidget</class>
+   <extends>QWidget</extends>
+   <header>starratingwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="resourses.qrc"/>
+ </resources>
+ <connections/>
+</ui>

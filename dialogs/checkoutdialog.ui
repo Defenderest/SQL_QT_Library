@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CheckoutDialog</class>
+ <widget class="QDialog" name="CheckoutDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width> <!-- Трохи ширше -->
+    <height>400</height> <!-- Трохи вище -->
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Оформлення замовлення</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QDialog#CheckoutDialog {
+    background-color: #f8f9fa;
+}
+
+QGroupBox {
+    border: none;
+    margin-top: 10px;
+    padding-top: 15px;
+    background-color: #ffffff;
+    border-radius: 12px; /* Збільшено заокруглення */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 5px 10px;
+    color: #495057;
+    font-weight: bold;
+}
+
+QLabel {
+    color: #343a40;
+    padding: 2px;
+}
+
+QLabel#nameLabel, QLabel#emailLabel {
+    font-weight: normal;
+    color: #212529;
+}
+
+QLineEdit, QComboBox {
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 8px; /* Збільшено заокруглення */
+    background-color: #ffffff;
+    color: #000000; /* Змінено колір тексту на чорний */
+    min-height: 20px;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border-color: #adb5bd; /* Сірий колір рамки при фокусі */
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(173, 181, 189, 0.25); /* Сіра тінь при фокусі */
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox::down-arrow {
+    width: 12px;
+    height: 12px;
+}
+
+QLabel#totalAmountLabel {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #343a40; /* Темно-сірий колір замість синього */
+    padding-top: 10px;
+    padding-bottom: 5px;
+}
+
+QDialogButtonBox QPushButton {
+    padding: 8px 20px;
+    border-radius: 8px; /* Збільшено заокруглення */
+    font-weight: bold;
+    min-width: 80px;
+}
+
+QDialogButtonBox QPushButton[text="OK"] {
+    background-color: #6c757d; /* Сірий фон */
+    color: white;
+    border: 1px solid #6c757d;
+}
+QDialogButtonBox QPushButton[text="OK"]:hover {
+    background-color: #5a6268; /* Темніший сірий при наведенні */
+    border-color: #545b62;
+}
+QDialogButtonBox QPushButton[text="OK"]:pressed {
+    background-color: #495057; /* Ще темніший при натисканні */
+    border-color: #454a4e;
+}
+
+QDialogButtonBox QPushButton[text="Cancel"] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #ced4da;
+}
+QDialogButtonBox QPushButton[text="Cancel"]:hover {
+    background-color: #e2e6ea;
+    border-color: #dae0e5;
+}
+QDialogButtonBox QPushButton[text="Cancel"]:pressed {
+    background-color: #d6dbe0;
+    border-color: #cfd5db;
+}
+
+Line {
+ background-color: #dee2e6;
+ height: 1px;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0,0,0">
+   <property name="spacing">
+    <number>15</number> <!-- Збільшений відступ між елементами -->
+   </property>
+   <property name="leftMargin">
+    <number>20</number> <!-- Збільшені відступи зліва/справа -->
+   </property>
+   <property name="topMargin">
+    <number>20</number> <!-- Збільшені відступи зверху/знизу -->
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="customerInfoGroupBox">
+     <property name="title">
+      <string>Інформація про покупця</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <property name="horizontalSpacing">
+       <number>15</number> <!-- Збільшений горизонтальний відступ -->
+      </property>
+      <property name="verticalSpacing">
+       <number>10</number> <!-- Збільшений вертикальний відступ -->
+      </property>
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>15</number>
+      </property>
+      <property name="bottomMargin">
+       <number>15</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Ім'я:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="nameLabel">
+        <property name="text">
+         <string>[Ім'я Прізвище]</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Email:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="emailLabel">
+        <property name="text">
+         <string>[email@example.com]</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="shippingGroupBox">
+     <property name="title">
+      <string>Доставка та оплата</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <property name="horizontalSpacing">
+       <number>15</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>10</number>
+      </property>
+      <property name="leftMargin">
+       <number>15</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>15</number>
+      </property>
+      <property name="bottomMargin">
+       <number>15</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Адреса доставки:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="addressLineEdit">
+        <property name="placeholderText">
+         <string>Введіть повну адресу</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Спосіб оплати:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="paymentMethodComboBox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>20</height> <!-- Зменшений спейсер -->
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="spacing">
+      <number>10</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="totalAmountLabel">
+       <property name="text">
+        <string>Загальна сума: 0.00 грн</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>addressLineEdit</tabstop>
+  <tabstop>paymentMethodComboBox</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>CheckoutDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>CheckoutDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

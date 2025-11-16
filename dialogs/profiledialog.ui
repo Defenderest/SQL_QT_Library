@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProfileDialog</class>
+ <widget class="QDialog" name="ProfileDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Профіль користувача</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* --- Загальні стилі діалогу --- */
+QDialog {
+    background-color: #f8f9fa; /* Світло-сірий фон */
+}
+
+QWidget {
+    font-family: &quot;Segoe UI&quot;, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 10pt;
+    color: #212529; /* Основний темний текст */
+}
+
+/* --- Заголовок профілю --- */
+QLabel#profileHeaderLabel {
+   font-size: 15pt; /* Трохи менший */
+   font-weight: 600;
+   color: #343a40; /* Темно-сірий */
+   margin-bottom: 15px;
+   padding-bottom: 5px;
+   border-bottom: 1px solid #dee2e6; /* Лінія під заголовком */
+}
+
+/* --- Мітки полів (Ім'я:, Прізвище:, ...) --- */
+QLabel[objectName^=&quot;label_&quot;] {
+  font-weight: 600; /* Жирніший шрифт для міток */
+  color: #495057; /* Сірий колір */
+  padding-top: 3px; /* Невеликий відступ зверху для вирівнювання */
+}
+
+/* --- Значення полів (самі дані) --- */
+QLabel#firstNameLabel, QLabel#lastNameLabel, QLabel#emailLabel,
+QLabel#phoneLabel, QLabel#addressLabel, QLabel#joinDateLabel,
+QLabel#loyaltyLabel, QLabel#pointsLabel {
+    font-weight: 400; /* Звичайний шрифт для значень */
+    color: #212529;
+    padding-top: 3px;
+}
+
+/* --- Кнопки внизу діалогу --- */
+QDialogButtonBox QPushButton {
+    padding: 7px 15px; /* Трохи менші падінги */
+    background-color: #6c757d; /* Сіра кнопка "Закрити" */
+    color: white;
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    font-weight: 500;
+    min-height: 32px;
+    font-size: 10pt;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+QDialogButtonBox QPushButton:hover {
+    background-color: #5c636a; /* Темніший сірий при наведенні */
+    border-color: #565e64;
+}
+QDialogButtonBox QPushButton:pressed {
+    background-color: #565e64; /* Ще темніший при натисканні */
+    border-color: #51585e;
+}
+</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <property name="leftMargin">
+    <number>20</number>
+   </property>
+   <property name="topMargin">
+    <number>20</number>
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="profileHeaderLabel">
+     <property name="text">
+      <string>Ваш профіль</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="profileFormLayout">
+     <property name="horizontalSpacing">
+      <number>15</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>10</number>
+     </property>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_FirstName">
+       <property name="text">
+        <string>Ім'я:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="firstNameLineEdit">
+       <property name="placeholderText">
+        <string>Введіть ім'я</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_LastName">
+       <property name="text">
+        <string>Прізвище:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lastNameLineEdit">
+       <property name="placeholderText">
+        <string>Введіть прізвище</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_Email">
+       <property name="text">
+        <string>Email:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="emailLabel">
+       <property name="text">
+        <string>(завантаження...)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_Phone">
+       <property name="text">
+        <string>Телефон:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="phoneLineEdit">
+       <property name="placeholderText">
+        <string>Введіть номер телефону</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_Address">
+       <property name="text">
+        <string>Адреса:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="addressLineEdit">
+       <property name="placeholderText">
+        <string>Введіть адресу</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_JoinDate">
+       <property name="text">
+        <string>Дата реєстрації:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="joinDateLabel">
+       <property name="text">
+        <string>(завантаження...)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_Loyalty">
+       <property name="text">
+        <string>Програма лояльності:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="loyaltyLabel">
+       <property name="text">
+        <string>(завантаження...)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_Points">
+       <property name="text">
+        <string>Бонусні бали:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLabel" name="pointsLabel">
+       <property name="text">
+        <string>(завантаження...)</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Save</set> <!-- Змінено кнопки -->
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool> <!-- Повертаємо стандартне вирівнювання -->
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ProfileDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>ProfileDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
