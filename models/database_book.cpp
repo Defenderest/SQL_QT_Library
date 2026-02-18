@@ -6,6 +6,7 @@
 #include <QVariant>
 #include <QStringList>
 #include <QDate>
+#include <limits>
 
 QList<BookDisplayInfo> DatabaseManager::getAllBooksForDisplay(int limit, int offset) const
 {
@@ -21,19 +22,32 @@ QList<BookDisplayInfo> DatabaseManager::getAllBooksForDisplay(int limit, int off
         return books;
     }
 
-    // Додаємо LIMIT та OFFSET, якщо вони вказані
-    if (limit > 0) {
-        sql += QString(" LIMIT %1 OFFSET %2").arg(limit).arg(offset);
+    // Додаємо OFFSET, якщо він вказаний. LIMIT задається через :limit у SQL.
+    if (offset > 0) {
+        sql += "\nOFFSET :offset";
     }
 
     QSqlQuery query(m_db);
     qInfo() << "Виконання SQL 'GetAllBooksForDisplay' для отримання книг для відображення...";
     qDebug() << "SQL запит:" << sql; // Для налагодження
 
-    if (!query.exec(sql)) {
-        qCritical() << "Помилка при виконанні 'GetAllBooksForDisplay':";
+    if (!query.prepare(sql)) {
+        qCritical() << "Помилка підготовки 'GetAllBooksForDisplay':";
         qCritical() << query.lastError().text();
         qCritical() << "SQL запит:" << sql;
+        return books;
+    }
+
+    const int effectiveLimit = (limit > 0) ? limit : std::numeric_limits<int>::max();
+    query.bindValue(":limit", effectiveLimit);
+    if (offset > 0) {
+        query.bindValue(":offset", offset);
+    }
+
+    if (!query.exec()) {
+        qCritical() << "Помилка при виконанні 'GetAllBooksForDisplay':";
+        qCritical() << query.lastError().text();
+        qCritical() << "SQL запит:" << query.lastQuery();
         return books;
     }
 
@@ -54,7 +68,6 @@ QList<BookDisplayInfo> DatabaseManager::getAllBooksForDisplay(int limit, int off
             bookInfo.authors = "";
         }
 
-
         books.append(bookInfo);
         count++;
     }
@@ -62,7 +75,6 @@ QList<BookDisplayInfo> DatabaseManager::getAllBooksForDisplay(int limit, int off
 
     return books;
 }
-
 
 QList<BookDisplayInfo> DatabaseManager::getFilteredBooksForDisplay(const BookFilterCriteria &criteria) const
 {
