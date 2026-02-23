@@ -6,219 +6,656 @@ import ".."
 ScrollView {
     id: root
 
+    property bool checkoutStep: false
+    property string checkoutMessage: ""
+    property bool checkoutError: false
+    property string liqPayCheckoutUrl: ""
+    property string pendingCheckoutAddress: ""
+    property bool compactCheckout: root.availableWidth < 980
+
+    function openLiqPayOverlay() {
+        liqPayOverlayLoader.active = true
+        if (liqPayOverlayLoader.status === Loader.Ready && liqPayOverlayLoader.item) {
+            liqPayOverlayLoader.item.checkoutUrl = root.liqPayCheckoutUrl
+            liqPayOverlayLoader.item.open()
+        }
+    }
+
     contentWidth: availableWidth
-    contentHeight: contentColumn.height
+    contentHeight: shell.implicitHeight
     ScrollBar.vertical.policy: ScrollBar.AsNeeded
     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
+    Connections {
+        target: cartModel
+
+        function onCheckoutSucceeded(orderId) {
+            root.checkoutError = false
+            root.checkoutMessage = "Замовлення #" + orderId + " успішно оформлено"
+            root.checkoutStep = false
+            shippingAddressInput.text = ""
+            paymentMethodInput.currentIndex = 0
+            ordersModel.loadOrders()
+        }
+
+        function onCheckoutFailed(message) {
+            root.checkoutError = true
+            root.checkoutMessage = message && message.length > 0 ? message : "Не вдалося оформити замовлення"
+        }
+
+        function onLiqPayCheckoutOpened(checkoutUrl) {
+            root.checkoutError = false
+            root.checkoutMessage = ""
+            root.liqPayCheckoutUrl = checkoutUrl
+            root.openLiqPayOverlay()
+        }
+
+        function onLiqPayCheckoutFailed(message) {
+            root.checkoutError = true
+            root.checkoutMessage = message && message.length > 0 ? message : "Не вдалося відкрити LiqPay"
+        }
+    }
+
     ColumnLayout {
-        id: contentColumn
+        id: shell
         width: root.availableWidth
         spacing: 0
 
-        Item { Layout.preferredHeight: 20 }
+        Item { Layout.preferredHeight: Theme.spacingL }
 
-        ColumnLayout {
+        Item {
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXXL
             Layout.rightMargin: Theme.spacingXXL
-            spacing: 0
+            implicitHeight: stack.implicitHeight
 
-            Label {
-                visible: cartModel.count === 0
-                text: "Кошик порожній"
-                color: Theme.textSecondary
-                font.pixelSize: 14
-            }
-
-            Repeater {
-                model: cartModel
+            StackLayout {
+                id: stack
+                width: parent.width
+                currentIndex: root.checkoutStep ? 1 : 0
 
                 Item {
-                    Layout.fillWidth: true
-                    implicitHeight: 150
+                    implicitHeight: cartColumn.implicitHeight
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.topMargin: 30
-                        anchors.bottomMargin: 30
-                        spacing: 30
+                    ColumnLayout {
+                        id: cartColumn
+                        width: parent.width
+                        spacing: 0
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 30
+                        Label {
+                            visible: cartModel.count === 0
+                            text: "Кошик порожній"
+                            color: Theme.textSecondary
+                            font.pixelSize: 14
+                        }
 
-                            Rectangle {
-                                Layout.preferredWidth: 60
-                                Layout.preferredHeight: 90
-                                color: "#111"
-                                clip: true
+                        Repeater {
+                            model: cartModel
 
-                                Image {
-                                    id: coverImage
+                            Item {
+                                Layout.fillWidth: true
+                                width: parent ? parent.width : 1000
+                                height: 140
+
+                                RowLayout {
                                     anchors.fill: parent
-                                    source: {
-                                        if (!model.coverImagePath) return ""
-                                        var p = model.coverImagePath
-                                        if (p.indexOf("qrc:/") === 0 || p.indexOf("file:///") === 0 ||
-                                                p.indexOf("http://") === 0 || p.indexOf("https://") === 0) {
-                                            return p
+                                    spacing: Theme.spacingXL
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingXL
+
+                                        Rectangle {
+                                            Layout.preferredWidth: 60
+                                            Layout.preferredHeight: 90
+                                            color: "#111"
+                                            clip: true
+
+                                            Image {
+                                                id: coverImage
+                                                anchors.fill: parent
+                                                source: {
+                                                    if (!model.coverImagePath) return ""
+                                                    var p = model.coverImagePath
+                                                    if (p.indexOf("qrc:/") === 0 || p.indexOf("file:///") === 0 ||
+                                                            p.indexOf("http://") === 0 || p.indexOf("https://") === 0) {
+                                                        return p
+                                                    }
+                                                    return "file:///" + p.replace(/\\/g, "/")
+                                                }
+                                                fillMode: Image.PreserveAspectCrop
+                                                smooth: true
+                                                visible: status === Image.Ready
+                                            }
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                color: "#555"
+                                                opacity: 0.45
+                                                visible: coverImage.status === Image.Ready
+                                            }
+
+                                            Label {
+                                                anchors.centerIn: parent
+                                                text: "?"
+                                                font.pixelSize: 24
+                                                color: Theme.textSecondary
+                                                visible: coverImage.status !== Image.Ready
+                                            }
                                         }
-                                        return "file:///" + p.replace(/\\/g, "/")
+
+                                        ColumnLayout {
+                                            spacing: 4
+
+                                            Label {
+                                                text: model.title
+                                                font.family: Theme.fontDisplay.family
+                                                font.pixelSize: 20
+                                                color: Theme.textPrimary
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Label {
+                                                text: model.author
+                                                font.family: Theme.fontBody.family
+                                                font.pixelSize: 12
+                                                color: Theme.textMuted
+                                                elide: Text.ElideRight
+                                            }
+                                        }
                                     }
-                                    fillMode: Image.PreserveAspectCrop
-                                    smooth: true
-                                    visible: status === Image.Ready
+
+                                    RowLayout {
+                                        spacing: Theme.spacingM
+
+                                        Label {
+                                            text: "-"
+                                            font.family: Theme.fontDisplay.family
+                                            font.pixelSize: 20
+                                            color: Theme.textPrimary
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: cartModel.decreaseQuantity(model.bookId)
+                                            }
+                                        }
+
+                                        Label {
+                                            text: model.quantity
+                                            font.family: Theme.fontDisplay.family
+                                            font.pixelSize: 18
+                                            color: Theme.textPrimary
+                                        }
+
+                                        Label {
+                                            text: "+"
+                                            font.family: Theme.fontDisplay.family
+                                            font.pixelSize: 20
+                                            color: Theme.textPrimary
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: cartModel.increaseQuantity(model.bookId)
+                                            }
+                                        }
+                                    }
+
+                                    Label {
+                                        text: Number(model.subtotal).toFixed(2) + " UAH"
+                                        font.pixelSize: 18
+                                        color: Theme.textPrimary
+                                    }
                                 }
 
                                 Rectangle {
-                                    anchors.fill: parent
-                                    color: "#555"
-                                    opacity: 0.45
-                                    visible: coverImage.status === Image.Ready
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    height: 1
+                                    color: Theme.borderLight
+                                }
+                            }
+                        }
+
+                        Item { Layout.preferredHeight: Theme.spacingXL }
+
+                        ColumnLayout {
+                            Layout.alignment: Qt.AlignRight
+                            spacing: Theme.spacingS
+
+                            Label {
+                                text: "Усього"
+                                font.family: Theme.fontCaption.family
+                                font.pixelSize: 12
+                                font.capitalization: Font.AllUppercase
+                                color: Theme.textMuted
+                            }
+
+                            Label {
+                                text: Number(cartModel.totalPrice).toFixed(2) + " UAH"
+                                font.family: Theme.fontDisplay.family
+                                font.pixelSize: 48
+                                color: Theme.textPrimary
+                            }
+
+                            Rectangle {
+                                id: checkoutTriggerButton
+                                Layout.preferredWidth: 260
+                                Layout.preferredHeight: 50
+                                color: checkoutTriggerArea.containsMouse ? Theme.accentWhite : "transparent"
+                                border.color: Theme.accentWhite
+                                border.width: 1
+                                radius: Theme.radiusSharp
+                                enabled: cartModel.totalItems > 0
+                                opacity: enabled ? 1.0 : 0.4
+
+                                Behavior on color {
+                                    ColorAnimation { duration: Theme.animationFast }
                                 }
 
                                 Label {
                                     anchors.centerIn: parent
-                                    text: "?"
-                                    font.pixelSize: 24
-                                    color: Theme.textSecondary
-                                    visible: coverImage.status !== Image.Ready
+                                    text: "Оформити замовлення"
+                                    font.family: Theme.fontBody.family
+                                    font.pixelSize: 12
+                                    font.capitalization: Font.AllUppercase
+                                    font.letterSpacing: 2
+                                    color: checkoutTriggerArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                                }
+
+                                MouseArea {
+                                    id: checkoutTriggerArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    enabled: checkoutTriggerButton.enabled
+                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: {
+                                        root.checkoutMessage = ""
+                                        root.checkoutError = false
+                                        root.checkoutStep = true
+                                    }
+                                }
+                            }
+                        }
+
+                        Item { Layout.preferredHeight: Theme.spacingS }
+
+                        Label {
+                            visible: root.checkoutMessage.length > 0
+                            Layout.alignment: Qt.AlignRight
+                            text: root.checkoutMessage
+                            color: root.checkoutError ? Theme.error : Theme.success
+                            font.pixelSize: 13
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
+
+                Item {
+                    implicitHeight: checkoutCard.implicitHeight
+
+                    Rectangle {
+                        id: checkoutCard
+                        width: parent.width
+                        implicitHeight: checkoutColumn.implicitHeight + Theme.spacingXL * 2
+                        radius: Theme.radiusSoft
+                        color: Theme.bgCard
+                        border.width: 1
+                        border.color: Theme.borderLight
+
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.06) }
+                            GradientStop { position: 0.65; color: Qt.rgba(1, 1, 1, 0.025) }
+                            GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.012) }
+                        }
+
+                        ColumnLayout {
+                            id: checkoutColumn
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingXL
+                            spacing: Theme.spacingL
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                Rectangle {
+                                    Layout.preferredWidth: 176
+                                    Layout.preferredHeight: 38
+                                    radius: Theme.radiusPill
+                                    color: backArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                                    border.width: 1
+                                    border.color: Theme.borderLight
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: Theme.animationFast }
+                                    }
+
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "← Назад до кошика"
+                                        color: Theme.textPrimary
+                                        font.family: Theme.fontBody.family
+                                        font.pixelSize: 12
+                                    }
+
+                                    MouseArea {
+                                        id: backArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.checkoutStep = false
+                                    }
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Rectangle {
+                                    Layout.preferredHeight: 32
+                                    Layout.preferredWidth: amountLabel.implicitWidth + 28
+                                    radius: Theme.radiusRound
+                                    color: Qt.rgba(1, 1, 1, 0.06)
+                                    border.width: 1
+                                    border.color: Theme.borderLight
+
+                                    Label {
+                                        id: amountLabel
+                                        anchors.centerIn: parent
+                                        text: "Сума: " + Number(cartModel.totalPrice).toFixed(2) + " UAH"
+                                        color: Theme.textPrimary
+                                        font.family: Theme.fontCaption.family
+                                        font.pixelSize: 10
+                                        font.capitalization: Font.AllUppercase
+                                        font.letterSpacing: 1
+                                    }
                                 }
                             }
 
                             ColumnLayout {
-                                spacing: 5
+                                Layout.fillWidth: true
+                                spacing: 4
 
                                 Label {
-                                    text: model.title
+                                    text: "Оформлення замовлення"
                                     font.family: Theme.fontDisplay.family
-                                    font.pixelSize: 20
+                                    font.pixelSize: root.compactCheckout ? 30 : 36
                                     color: Theme.textPrimary
-                                    elide: Text.ElideRight
                                 }
 
                                 Label {
-                                    text: model.author
+                                    text: "Перевірте адресу, оберіть спосіб оплати та підтвердіть замовлення."
+                                    color: Theme.textSecondary
+                                    font.family: Theme.fontBody.family
+                                    font.pixelSize: 13
+                                }
+                            }
+
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: root.compactCheckout ? 1 : 2
+                                columnSpacing: Theme.spacingXL
+                                rowSpacing: Theme.spacingM
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingXS
+
+                                    Label {
+                                        text: "Адреса доставки"
+                                        font.family: Theme.fontCaption.family
+                                        font.pixelSize: 10
+                                        font.capitalization: Font.AllUppercase
+                                        color: Theme.textMuted
+                                        font.letterSpacing: 1
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 48
+                                        radius: Theme.radiusSoft
+                                        color: Qt.rgba(1, 1, 1, 0.02)
+                                        border.color: shippingAddressInput.activeFocus ? Theme.borderHover : Theme.borderLight
+                                        border.width: 1
+
+                                        Behavior on border.color {
+                                            ColorAnimation { duration: Theme.animationFast }
+                                        }
+
+                                        TextField {
+                                            id: shippingAddressInput
+                                            anchors.fill: parent
+                                            anchors.leftMargin: Theme.spacingM
+                                            anchors.rightMargin: Theme.spacingM
+                                            color: Theme.textPrimary
+                                            font.family: Theme.fontBody.family
+                                            font.pixelSize: 13
+                                            placeholderText: "Вул. Прикладна, 1"
+                                            placeholderTextColor: Theme.textMuted
+                                            background: Rectangle { color: "transparent" }
+                                        }
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingXS
+
+                                    Label {
+                                        text: "Спосіб оплати"
+                                        font.family: Theme.fontCaption.family
+                                        font.pixelSize: 10
+                                        font.capitalization: Font.AllUppercase
+                                        color: Theme.textMuted
+                                        font.letterSpacing: 1
+                                    }
+
+                                    ComboBox {
+                                        id: paymentMethodInput
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 48
+                                        model: ["Готівка", "Картка", "LiqPay Sandbox"]
+
+                                        background: Rectangle {
+                                            radius: Theme.radiusSoft
+                                            color: Qt.rgba(1, 1, 1, 0.02)
+                                            border.width: 1
+                                            border.color: paymentMethodInput.activeFocus ? Theme.borderHover : Theme.borderLight
+
+                                            Behavior on border.color {
+                                                ColorAnimation { duration: Theme.animationFast }
+                                            }
+                                        }
+
+                                        contentItem: Label {
+                                            leftPadding: Theme.spacingM
+                                            rightPadding: Theme.spacingXL
+                                            text: paymentMethodInput.displayText
+                                            color: Theme.textPrimary
+                                            font.family: Theme.fontBody.family
+                                            font.pixelSize: 13
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+
+                                        indicator: Label {
+                                            x: paymentMethodInput.width - width - Theme.spacingM
+                                            y: (paymentMethodInput.height - height) / 2
+                                            text: "⌄"
+                                            color: Theme.textSecondary
+                                            font.pixelSize: 16
+                                        }
+
+                                        popup: Popup {
+                                            y: paymentMethodInput.height + 4
+                                            width: paymentMethodInput.width
+                                            padding: 0
+                                            implicitHeight: contentItem.implicitHeight
+                                            background: Rectangle {
+                                                radius: Theme.radiusSoft
+                                                color: Theme.glassPanel
+                                                border.width: 1
+                                                border.color: Theme.borderLight
+                                            }
+
+                                            contentItem: ListView {
+                                                clip: true
+                                                implicitHeight: contentHeight
+                                                model: paymentMethodInput.popup.visible ? paymentMethodInput.delegateModel : null
+
+                                                delegate: ItemDelegate {
+                                                    width: paymentMethodInput.width
+                                                    highlighted: paymentMethodInput.highlightedIndex === index
+                                                    contentItem: Label {
+                                                        text: modelData
+                                                        color: highlighted ? Theme.bgBody : Theme.textPrimary
+                                                        font.family: Theme.fontBody.family
+                                                        font.pixelSize: 13
+                                                        elide: Text.ElideRight
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    background: Rectangle {
+                                                        color: highlighted ? Theme.accentWhite : "transparent"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 62
+                                radius: Theme.radiusSoft
+                                color: Qt.rgba(255 / 255, 255 / 255, 255 / 255, 0.02)
+                                border.width: 1
+                                border.color: Theme.borderLight
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    Label {
+                                        text: "🔒"
+                                        font.pixelSize: 15
+                                    }
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: "Дані замовлення передаються через захищене з'єднання."
+                                        color: Theme.textSecondary
+                                        font.family: Theme.fontBody.family
+                                        font.pixelSize: 12
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                id: confirmButton
+                                Layout.preferredWidth: root.compactCheckout ? 260 : 320
+                                Layout.preferredHeight: 54
+                                color: confirmArea.containsMouse ? Theme.accentWhite : "transparent"
+                                border.color: Theme.accentWhite
+                                border.width: 1
+                                radius: Theme.radiusRound
+                                enabled: cartModel.totalItems > 0 && shippingAddressInput.text.trim().length > 0
+                                opacity: enabled ? 1.0 : 0.45
+
+                                Behavior on color {
+                                    ColorAnimation { duration: Theme.animationFast }
+                                }
+
+                                Label {
+                                    anchors.centerIn: parent
+                                    text: paymentMethodInput.currentText === "LiqPay Sandbox"
+                                          ? "Перейти до LiqPay"
+                                          : "Підтвердити замовлення"
                                     font.family: Theme.fontBody.family
                                     font.pixelSize: 12
-                                    color: Theme.textMuted
-                                    elide: Text.ElideRight
+                                    font.capitalization: Font.AllUppercase
+                                    font.letterSpacing: 2
+                                    color: confirmArea.containsMouse ? Theme.bgBody : Theme.textPrimary
                                 }
-                            }
-                        }
-
-                        RowLayout {
-                            spacing: 15
-
-                            Label {
-                                text: "-"
-                                font.family: Theme.fontDisplay.family
-                                font.pixelSize: 18
-                                color: Theme.textPrimary
 
                                 MouseArea {
+                                    id: confirmArea
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: cartModel.decreaseQuantity(model.bookId)
+                                    hoverEnabled: true
+                                    enabled: confirmButton.enabled
+                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: {
+                                        root.checkoutMessage = ""
+                                        root.checkoutError = false
+                                        if (paymentMethodInput.currentText === "LiqPay Sandbox") {
+                                            root.pendingCheckoutAddress = shippingAddressInput.text.trim()
+                                            cartModel.startLiqPayCheckout(root.pendingCheckoutAddress)
+                                        } else {
+                                            cartModel.checkout(shippingAddressInput.text, paymentMethodInput.currentText)
+                                        }
+                                    }
                                 }
                             }
 
                             Label {
-                                text: model.quantity
-                                font.family: Theme.fontDisplay.family
-                                font.pixelSize: 18
-                                color: Theme.textPrimary
-                            }
-
-                            Label {
-                                text: "+"
-                                font.family: Theme.fontDisplay.family
-                                font.pixelSize: 18
-                                color: Theme.textPrimary
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: cartModel.increaseQuantity(model.bookId)
-                                }
+                                visible: root.checkoutMessage.length > 0
+                                Layout.fillWidth: true
+                                text: root.checkoutMessage
+                                color: root.checkoutError ? Theme.error : Theme.success
+                                font.pixelSize: 13
+                                wrapMode: Text.Wrap
                             }
                         }
-
-                        Label {
-                            text: Number(model.subtotal).toFixed(2) + " ₴"
-                            font.pixelSize: 18
-                            color: Theme.textPrimary
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: 1
-                        color: Theme.borderLight
-                    }
-                }
-            }
-
-            Item { Layout.preferredHeight: 50 }
-
-            ColumnLayout {
-                Layout.alignment: Qt.AlignRight
-                spacing: 10
-
-                Label {
-                    text: "Усього"
-                    font.family: Theme.fontCaption.family
-                    font.pixelSize: 12
-                    font.capitalization: Font.AllUppercase
-                    color: Theme.textMuted
-                }
-
-                Label {
-                    text: Number(cartModel.totalPrice).toFixed(2) + " ₴"
-                    font.family: Theme.fontDisplay.family
-                    font.pixelSize: 48
-                    color: Theme.textPrimary
-                }
-
-                Rectangle {
-                    id: checkoutButton
-                    width: 180
-                    height: 50
-                    color: checkoutArea.containsMouse ? Theme.accentWhite : "transparent"
-                    border.color: Theme.accentWhite
-                    border.width: 1
-                    enabled: cartModel.totalItems > 0
-                    opacity: enabled ? 1.0 : 0.4
-
-                    Behavior on color {
-                        ColorAnimation { duration: Theme.animationFast }
-                    }
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: "Checkout"
-                        font.family: Theme.fontBody.family
-                        font.pixelSize: 12
-                        font.capitalization: Font.AllUppercase
-                        font.letterSpacing: 2
-                        color: checkoutArea.containsMouse ? Theme.bgBody : Theme.textPrimary
-                    }
-
-                    MouseArea {
-                        id: checkoutArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        enabled: checkoutButton.enabled
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: appContext.checkout()
                     }
                 }
             }
         }
 
         Item { Layout.preferredHeight: Theme.spacingXXL }
+    }
+
+    Loader {
+        id: liqPayOverlayLoader
+        active: false
+        asynchronous: true
+        source: "qrc:/components/LiqPayCheckoutOverlay.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Ready && item && root.liqPayCheckoutUrl.length > 0) {
+                item.checkoutUrl = root.liqPayCheckoutUrl
+                item.open()
+            }
+        }
+    }
+
+    Connections {
+        target: liqPayOverlayLoader.item
+        ignoreUnknownSignals: true
+
+        function onPaymentSucceeded() {
+            if (root.pendingCheckoutAddress.length === 0) {
+                root.checkoutError = true
+                root.checkoutMessage = "Не знайдено адресу доставки для оформлення"
+                return
+            }
+            cartModel.checkout(root.pendingCheckoutAddress, "LiqPay Sandbox")
+            root.pendingCheckoutAddress = ""
+        }
+
+        function onPaymentCanceled() {
+            root.checkoutError = true
+            root.checkoutMessage = "Оплату LiqPay скасовано"
+            root.pendingCheckoutAddress = ""
+        }
+
+        function onOverlayClosed() {
+            root.liqPayCheckoutUrl = ""
+            liqPayOverlayLoader.active = false
+        }
     }
 }

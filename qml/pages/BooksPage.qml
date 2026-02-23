@@ -514,7 +514,7 @@ Item {
                 }
             }
 
-            Item { Layout.preferredHeight: 8 }
+            Item { Layout.preferredHeight: Math.max(24, Math.floor(root.height * 0.05)) }
 
             // ========== РљРќРћРџРљРђ Р—РђРЎРўРћРЎРЈР’РђРўР ==========
             Rectangle {

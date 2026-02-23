@@ -1,0 +1,110 @@
+/* =====================================================
+   SIDEBAR - NEUMORPHISM (SOFT UI) DESIGN
+   ===================================================== */
+
+/* --- Soft Background Panel --- */
+QFrame#sidebarFrame {
+    background-color: #141414;
+    border-right: 1px solid #1a1a1a;
+    min-width: 220px;
+    max-width: 220px;
+}
+
+#sidebarFrame {
+    background-color: #141414;
+}
+
+/* --- Logo --- */
+QLabel#sidebarLogoLabel {
+    color: #c9a962;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 30px 20px 20px 25px;
+}
+
+/* --- Soft Separator --- */
+QFrame#sidebarSeparator {
+    background-color: #1f1f1f;
+    max-height: 2px;
+    margin: 10px 30px 25px 30px;
+    border-radius: 1px;
+}
+
+/* --- Neumorphic Buttons (Convex) --- */
+QPushButton#navHomeButton,
+QPushButton#navBooksButton,
+QPushButton#navAuthorsButton,
+QPushButton#navOrdersButton,
+QPushButton#navProfileButton {
+    color: #888888;
+    background-color: #141414;
+    border: none;
+    border-radius: 16px;
+    padding: 16px 22px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 8px 18px;
+    min-height: 52px;
+    icon-size: 20px;
+
+    /* Soft shadow effect using multiple borders via box-shadow simulation */
+    border: 1px solid #1a1a1a;
+}
+
+/* Hover - lift effect */
+QPushButton#navHomeButton:hover,
+QPushButton#navBooksButton:hover,
+QPushButton#navAuthorsButton:hover,
+QPushButton#navOrdersButton:hover,
+QPushButton#navProfileButton:hover {
+    background-color: #1a1a1a;
+    color: #c9a962;
+    border-color: #252525;
+}
+
+/* Active/Checked - Concave (pressed) effect with Gold */
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: #0f0f0f;
+    color: #c9a962;
+    border: 2px solid #c9a962;
+    font-weight: 600;
+}
+
+/* Concave shadow effect for active */
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: #0d0d0d;
+    border: 2px solid #c9a962;
+}
+
+/* Collapsed - Square soft buttons */
+QPushButton#navHomeButton[collapsed="true"],
+QPushButton#navBooksButton[collapsed="true"],
+QPushButton#navAuthorsButton[collapsed="true"],
+QPushButton#navOrdersButton[collapsed="true"],
+QPushButton#navProfileButton[collapsed="true"] {
+    padding: 16px 0;
+    margin: 8px 15px;
+    border-radius: 14px;
+    min-width: 52px;
+    max-width: 52px;
+    text-align: center;
+}
+
+QPushButton#navHomeButton[collapsed="true"]:checked,
+QPushButton#navBooksButton[collapsed="true"]:checked,
+QPushButton#navAuthorsButton[collapsed="true"]:checked,
+QPushButton#navOrdersButton[collapsed="true"]:checked,
+QPushButton#navProfileButton[collapsed="true"]:checked {
+    background-color: #0d0d0d;
+    border: 2px solid #c9a962;
+}

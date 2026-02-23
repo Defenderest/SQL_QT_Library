@@ -9,6 +9,7 @@
 #include <QSplashScreen>
 #include <QLabel>
 #include <QTimer>
+#include <QByteArray>
 
 #include "database.h"
 #include "logindialog.h"
@@ -16,37 +17,52 @@
 // QML Models
 #include "qml_models/appcontext.h"
 #include "qml_models/booklistmodel.h"
+#include "qml_models/bookdetailsmodel.h"
 #include "qml_models/authorlistmodel.h"
+#include "qml_models/authordetailsmodel.h"
 #include "qml_models/cartmodel.h"
 #include "qml_models/ordersmodel.h"
 #include "qml_models/profilemodel.h"
+#include "qml_models/adminmodel.h"
 #include "qml_models/theme.h"
 
 int main(int argc, char *argv[])
 {
-    // Включаем высокое DPI для чёткого отображения
+    QByteArray chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
+    if (!chromiumFlags.isEmpty()) {
+        chromiumFlags += ' ';
+    }
+    chromiumFlags += "--ignore-gpu-blocklist "
+                     "--enable-gpu-rasterization "
+                     "--enable-zero-copy "
+                     "--num-raster-threads=4 "
+                     "--disable-background-timer-throttling "
+                     "--disable-renderer-backgrounding "
+                     "--disable-backgrounding-occluded-windows";
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
+    // Р’РєР»СЋС‡Р°РµРј РІС‹СЃРѕРєРѕРµ DPI РґР»СЏ С‡С‘С‚РєРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-    // Создаем GUI приложение с поддержкой виджетов (для диалогов)
+    // РЎРѕР·РґР°РµРј GUI РїСЂРёР»РѕР¶РµРЅРёРµ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ РІРёРґР¶РµС‚РѕРІ (РґР»СЏ РґРёР°Р»РѕРіРѕРІ)
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/icons/icons/app_icon.png"));
     app.setApplicationName("Bookstore");
     app.setOrganizationName("Patsera_Ihor");
     app.setApplicationVersion("1.0");
 
-    // Показываем Splash Screen сразу, чтобы пользователь видел, что приложение запускается
+    // РџРѕРєР°Р·С‹РІР°РµРј Splash Screen СЃСЂР°Р·Сѓ, С‡С‚РѕР±С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРёРґРµР», С‡С‚Рѕ РїСЂРёР»РѕР¶РµРЅРёРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ
     QSplashScreen splash(QPixmap(":/images/banner2.jpg").scaled(800, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     QLabel splashLabel(&splash);
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nЗавантаження...");
+    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nР—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ...");
     splashLabel.setAlignment(Qt::AlignCenter);
     splashLabel.setStyleSheet("QLabel { color: white; font-size: 24px; font-family: 'Inter'; background: transparent; }");
     splashLabel.setGeometry(0, 350, 800, 100);
     splash.show();
     app.processEvents();
 
-    // Подключаемся к базе данных
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nПідключення до бази даних...");
+    // РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
+    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nРџС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ Р±Р°Р·Рё РґР°РЅРёС…...");
     app.processEvents();
 
     DatabaseManager dbManager;
@@ -60,24 +76,24 @@ int main(int argc, char *argv[])
 
     if (!connected) {
         splash.finish(nullptr);
-        QMessageBox::critical(nullptr, QObject::tr("Помилка підключення до БД"),
-                              QObject::tr("Не вдалося підключитися до бази даних.\nДодаток не може продовжити роботу.\n") + dbManager.lastError().text());
+        QMessageBox::critical(nullptr, QObject::tr("РџРѕРјРёР»РєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ Р‘Р”"),
+                              QObject::tr("РќРµ РІРґР°Р»РѕСЃСЏ РїС–РґРєР»СЋС‡РёС‚РёСЃСЏ РґРѕ Р±Р°Р·Рё РґР°РЅРёС….\nР”РѕРґР°С‚РѕРє РЅРµ РјРѕР¶Рµ РїСЂРѕРґРѕРІР¶РёС‚Рё СЂРѕР±РѕС‚Сѓ.\n") + dbManager.lastError().text());
         qCritical() << "Database connection failed. Application cannot start.";
         return 1;
     }
 
-    // Автоматическая инициализация и заполнение БД
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nІніціалізація бази даних...");
+    // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Рё Р·Р°РїРѕР»РЅРµРЅРёРµ Р‘Р”
+    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nР†РЅС–С†С–Р°Р»С–Р·Р°С†С–СЏ Р±Р°Р·Рё РґР°РЅРёС…...");
     app.processEvents();
 
     if (!dbManager.checkAndInitDatabase()) {
         qWarning() << "Database initialization failed or was partially successful.";
     }
 
-    // Закрываем splash перед показом диалога входа
+    // Р—Р°РєСЂС‹РІР°РµРј splash РїРµСЂРµРґ РїРѕРєР°Р·РѕРј РґРёР°Р»РѕРіР° РІС…РѕРґР°
     splash.finish(nullptr);
 
-    // Показываем диалог входа (пока на виджетах)
+    // РџРѕРєР°Р·С‹РІР°РµРј РґРёР°Р»РѕРі РІС…РѕРґР° (РїРѕРєР° РЅР° РІРёРґР¶РµС‚Р°С…)
     LoginDialog loginDialog(&dbManager);
     int loggedInUserId = -1;
 
@@ -86,67 +102,106 @@ int main(int argc, char *argv[])
     }
 
     loggedInUserId = loginDialog.getLoggedInCustomerId();
+    const bool loggedInIsAdmin = loginDialog.getLoggedInIsAdmin();
     if (loggedInUserId <= 0) {
-        QMessageBox::critical(nullptr, QObject::tr("Помилка входу"),
-                              QObject::tr("Не вдалося отримати ідентифікатор користувача після входу."));
+        QMessageBox::critical(nullptr, QObject::tr("РџРѕРјРёР»РєР° РІС…РѕРґСѓ"),
+                              QObject::tr("РќРµ РІРґР°Р»РѕСЃСЏ РѕС‚СЂРёРјР°С‚Рё С–РґРµРЅС‚РёС„С–РєР°С‚РѕСЂ РєРѕСЂРёСЃС‚СѓРІР°С‡Р° РїС–СЃР»СЏ РІС…РѕРґСѓ."));
         qCritical() << "Failed to retrieve valid user ID after login.";
         return 1;
     }
 
     qDebug() << "User logged in with ID:" << loggedInUserId;
 
-    // Создаем QML модели (лёгкие - просто инициализация)
+    // РЎРѕР·РґР°РµРј QML РјРѕРґРµР»Рё (Р»С‘РіРєРёРµ - РїСЂРѕСЃС‚Рѕ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ)
     AppContext appContext;
     appContext.setDbManager(&dbManager);
     appContext.setCurrentCustomerId(loggedInUserId);
+    appContext.setIsAdmin(loggedInIsAdmin);
 
-    // Создаем модели, но НЕ загружаем данные сразу - пусть загрузятся при первом открытии страницы
+    // РЎРѕР·РґР°РµРј РјРѕРґРµР»Рё, РЅРѕ РќР• Р·Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ СЃСЂР°Р·Сѓ - РїСѓСЃС‚СЊ Р·Р°РіСЂСѓР·СЏС‚СЃСЏ РїСЂРё РїРµСЂРІРѕРј РѕС‚РєСЂС‹С‚РёРё СЃС‚СЂР°РЅРёС†С‹
     BookListModel bookModel;
     bookModel.setDbManager(&dbManager);
-    // ОТКЛЮЧЕНО: bookModel.loadPopularBooks(); - будет загружено при открытии BooksPage
+    // РћРўРљР›Р®Р§Р•РќРћ: bookModel.loadPopularBooks(); - Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё BooksPage
 
     BookListModel newArrivalsModel;
     newArrivalsModel.setDbManager(&dbManager);
-    // ОТКЛЮЧЕНО: newArrivalsModel.loadNewArrivals(); - загрузим после старта QML
+
+    BookDetailsModel bookDetailsModel;
+    bookDetailsModel.setDbManager(&dbManager);
+    // РћРўРљР›Р®Р§Р•РќРћ: newArrivalsModel.loadNewArrivals(); - Р·Р°РіСЂСѓР·РёРј РїРѕСЃР»Рµ СЃС‚Р°СЂС‚Р° QML
 
     AuthorListModel authorModel;
     authorModel.setDbManager(&dbManager);
-    // ОТКЛЮЧЕНО: authorModel.loadFeaturedAuthors(); - будет загружено при открытии AuthorsPage
+
+    AuthorDetailsModel authorDetailsModel;
+    authorDetailsModel.setDbManager(&dbManager);
+    // РћРўРљР›Р®Р§Р•РќРћ: authorModel.loadFeaturedAuthors(); - Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё AuthorsPage
 
     CartModel cartModel;
     cartModel.setDbManager(&dbManager);
     cartModel.setCustomerId(loggedInUserId);
+    const auto readLiqPayEnv = [](const char* primaryName,
+                                  const char* sandboxName,
+                                  const char* legacyName) {
+        QString value = qEnvironmentVariable(primaryName).trimmed();
+        if (!value.isEmpty()) {
+            return value;
+        }
+        value = qEnvironmentVariable(sandboxName).trimmed();
+        if (!value.isEmpty()) {
+            return value;
+        }
+        return qEnvironmentVariable(legacyName).trimmed();
+    };
+
+    const QString liqPayPublicKey = readLiqPayEnv("LIQPAY_PUBLIC_KEY", "LIQPAY_SANDBOX_PUBLIC_KEY", "PUBLIC_KEY");
+    const QString liqPayPrivateKey = readLiqPayEnv("LIQPAY_PRIVATE_KEY", "LIQPAY_SANDBOX_PRIVATE_KEY", "PRIVATE_KEY");
+
+    cartModel.setLiqPayPublicKey(liqPayPublicKey);
+    cartModel.setLiqPayPrivateKey(liqPayPrivateKey);
+    if (liqPayPublicKey.isEmpty() || liqPayPrivateKey.isEmpty()) {
+        qWarning() << "LiqPay keys are not set in process environment."
+                   << "Supported variables: LIQPAY_PUBLIC_KEY / LIQPAY_PRIVATE_KEY"
+                   << "or LIQPAY_SANDBOX_PUBLIC_KEY / LIQPAY_SANDBOX_PRIVATE_KEY"
+                   << "or PUBLIC_KEY / PRIVATE_KEY.";
+    }
 
     OrdersModel ordersModel;
     ordersModel.setDbManager(&dbManager);
     ordersModel.setCustomerId(loggedInUserId);
-    // ОТКЛЮЧЕНО: ordersModel.loadOrders(); - будет загружено при открытии OrdersPage
+    // РћРўРљР›Р®Р§Р•РќРћ: ordersModel.loadOrders(); - Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё OrdersPage
 
     ProfileModel profileModel;
     profileModel.setDbManager(&dbManager);
     profileModel.setCustomerId(loggedInUserId);
-    // ОТКЛЮЧЕНО: profileModel.loadProfile(); - будет загружено при открытии ProfilePage
 
-    // Создаем Theme
+    AdminModel adminModel;
+    adminModel.setDbManager(&dbManager);
+    // РћРўРљР›Р®Р§Р•РќРћ: profileModel.loadProfile(); - Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё ProfilePage
+
+    // РЎРѕР·РґР°РµРј Theme
     Theme theme;
 
-    // Устанавливаем стиль для Qt Quick Controls
+    // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚РёР»СЊ РґР»СЏ Qt Quick Controls
     QQuickStyle::setStyle("Fusion");
 
-    // Создаем QML движок
+    // РЎРѕР·РґР°РµРј QML РґРІРёР¶РѕРє
     QQmlApplicationEngine engine;
 
-    // Регистрируем контекстные свойства (доступны во всех QML файлах)
+    // Р РµРіРёСЃС‚СЂРёСЂСѓРµРј РєРѕРЅС‚РµРєСЃС‚РЅС‹Рµ СЃРІРѕР№СЃС‚РІР° (РґРѕСЃС‚СѓРїРЅС‹ РІРѕ РІСЃРµС… QML С„Р°Р№Р»Р°С…)
     engine.rootContext()->setContextProperty("Theme", &theme);
     engine.rootContext()->setContextProperty("appContext", &appContext);
     engine.rootContext()->setContextProperty("bookModel", &bookModel);
     engine.rootContext()->setContextProperty("newArrivalsModel", &newArrivalsModel);
+    engine.rootContext()->setContextProperty("bookDetailsModel", &bookDetailsModel);
     engine.rootContext()->setContextProperty("authorModel", &authorModel);
+    engine.rootContext()->setContextProperty("authorDetailsModel", &authorDetailsModel);
     engine.rootContext()->setContextProperty("cartModel", &cartModel);
     engine.rootContext()->setContextProperty("ordersModel", &ordersModel);
     engine.rootContext()->setContextProperty("profileModel", &profileModel);
+    engine.rootContext()->setContextProperty("adminModel", &adminModel);
 
-    // Загружаем главный QML файл
+    // Р—Р°РіСЂСѓР¶Р°РµРј РіР»Р°РІРЅС‹Р№ QML С„Р°Р№Р»
     const QUrl url(QStringLiteral("qrc:/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
@@ -157,7 +212,7 @@ int main(int argc, char *argv[])
         }
     }, Qt::QueuedConnection);
 
-    // Выводим ошибки QML
+    // Р’С‹РІРѕРґРёРј РѕС€РёР±РєРё QML
     QObject::connect(&engine, &QQmlApplicationEngine::warnings,
                      [](const QList<QQmlError> &warnings) {
         for (const auto &warning : warnings) {
@@ -167,16 +222,16 @@ int main(int argc, char *argv[])
 
     engine.load(url);
 
-    // Подключаем сигналы AppContext к действиям
+    // РџРѕРґРєР»СЋС‡Р°РµРј СЃРёРіРЅР°Р»С‹ AppContext Рє РґРµР№СЃС‚РІРёСЏРј
     QObject::connect(&appContext, &AppContext::navigateToPage,
                      [&engine](const QString& page) {
         qDebug() << "Navigate to page from C++:" << page;
-        // Получаем корневой объект QML и меняем страницу
+        // РџРѕР»СѓС‡Р°РµРј РєРѕСЂРЅРµРІРѕР№ РѕР±СЉРµРєС‚ QML Рё РјРµРЅСЏРµРј СЃС‚СЂР°РЅРёС†Сѓ
         if (engine.rootObjects().isEmpty()) return;
         QObject *root = engine.rootObjects().first();
         if (root) {
             root->setProperty("currentPage", page);
-            // Вызываем функцию навигации с именем страницы
+            // Р’С‹Р·С‹РІР°РµРј С„СѓРЅРєС†РёСЋ РЅР°РІРёРіР°С†РёРё СЃ РёРјРµРЅРµРј СЃС‚СЂР°РЅРёС†С‹
             QMetaObject::invokeMethod(root, "navigateToPage",
                                       Q_ARG(QVariant, page));
         }
@@ -185,13 +240,27 @@ int main(int argc, char *argv[])
     QObject::connect(&appContext, &AppContext::navigateToBookDetailsRequested,
                      [&engine](int bookId) {
         qDebug() << "Navigate to book details:" << bookId;
-        // TODO: Implement navigation
+        if (engine.rootObjects().isEmpty()) return;
+        QObject *root = engine.rootObjects().first();
+        if (root) {
+            root->setProperty("selectedBookId", bookId);
+            root->setProperty("currentPage", "bookDetails");
+            QMetaObject::invokeMethod(root, "navigateToPage",
+                                      Q_ARG(QVariant, "bookDetails"));
+        }
     });
 
     QObject::connect(&appContext, &AppContext::navigateToAuthorDetailsRequested,
                      [&engine](int authorId) {
         qDebug() << "Navigate to author details:" << authorId;
-        // TODO: Implement navigation
+        if (engine.rootObjects().isEmpty()) return;
+        QObject *root = engine.rootObjects().first();
+        if (root) {
+            root->setProperty("selectedAuthorId", authorId);
+            root->setProperty("currentPage", "authorDetails");
+            QMetaObject::invokeMethod(root, "navigateToPage",
+                                      Q_ARG(QVariant, "authorDetails"));
+        }
     });
 
     QObject::connect(&appContext, &AppContext::checkoutRequested,
@@ -206,12 +275,13 @@ int main(int argc, char *argv[])
         app.quit();
     });
 
-    // Загружаем данные для главной страницы ПОСЛЕ запуска QML, чтобы UI появился быстро
-    QTimer::singleShot(100, [&]() {
+    // Р—Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ РґР»СЏ РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹ РџРћРЎР›Р• Р·Р°РїСѓСЃРєР° QML, С‡С‚РѕР±С‹ UI РїРѕСЏРІРёР»СЃСЏ Р±С‹СЃС‚СЂРѕ
+    QTimer::singleShot(350, [&]() {
         qDebug() << "Loading initial data for HomePage...";
         newArrivalsModel.loadNewArrivals();
-        // profileModel.loadProfile(); // Загрузим при открытии профиля
+        // profileModel.loadProfile(); // Р—Р°РіСЂСѓР·РёРј РїСЂРё РѕС‚РєСЂС‹С‚РёРё РїСЂРѕС„РёР»СЏ
     });
 
     return app.exec();
 }
+

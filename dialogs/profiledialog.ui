@@ -14,62 +14,85 @@
    <string>Профіль користувача</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">/* --- Загальні стилі діалогу --- */
+   <string notr="true">/* Dark Theme for Profile Dialog */
 QDialog {
-    background-color: #f8f9fa; /* Світло-сірий фон */
+    background-color: #141414;
+    border: 1px solid #2a2a2a;
 }
 
 QWidget {
-    font-family: &quot;Segoe UI&quot;, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 10pt;
-    color: #212529; /* Основний темний текст */
+    color: #e0e0e0;
+    background: transparent;
 }
 
-/* --- Заголовок профілю --- */
+/* Profile Header */
 QLabel#profileHeaderLabel {
-   font-size: 15pt; /* Трохи менший */
+   font-size: 16pt;
    font-weight: 600;
-   color: #343a40; /* Темно-сірий */
+   color: #c9a962;
    margin-bottom: 15px;
    padding-bottom: 5px;
-   border-bottom: 1px solid #dee2e6; /* Лінія під заголовком */
+   border-bottom: 1px solid #2a2a2a;
 }
 
-/* --- Мітки полів (Ім'я:, Прізвище:, ...) --- */
-QLabel[objectName^=&quot;label_&quot;] {
-  font-weight: 600; /* Жирніший шрифт для міток */
-  color: #495057; /* Сірий колір */
-  padding-top: 3px; /* Невеликий відступ зверху для вирівнювання */
+/* Field Labels */
+QLabel[objectName^="label_"] {
+  font-weight: 600;
+  color: #888888;
+  padding-top: 3px;
 }
 
-/* --- Значення полів (самі дані) --- */
+/* Field Values */
 QLabel#firstNameLabel, QLabel#lastNameLabel, QLabel#emailLabel,
 QLabel#phoneLabel, QLabel#addressLabel, QLabel#joinDateLabel,
 QLabel#loyaltyLabel, QLabel#pointsLabel {
-    font-weight: 400; /* Звичайний шрифт для значень */
-    color: #212529;
+    font-weight: 400;
+    color: #ffffff;
     padding-top: 3px;
 }
 
-/* --- Кнопки внизу діалогу --- */
-QDialogButtonBox QPushButton {
-    padding: 7px 15px; /* Трохи менші падінги */
-    background-color: #6c757d; /* Сіра кнопка "Закрити" */
-    color: white;
-    border: 1px solid #6c757d;
-    border-radius: 4px;
-    font-weight: 500;
-    min-height: 32px;
+/* Input Fields */
+QLineEdit {
+    padding: 10px 14px;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    background-color: #1a1a1a;
+    color: #ffffff;
     font-size: 10pt;
-    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
 }
+
+QLineEdit:focus {
+    border-color: #c9a962;
+    background-color: #252525;
+}
+
+QLineEdit::placeholder {
+    color: #666666;
+}
+
+/* Dialog Buttons */
+QDialogButtonBox QPushButton {
+    padding: 10px 20px;
+    background-color: #c9a962;
+    color: #0d0d0d;
+    border: 1px solid #c9a962;
+    border-radius: 6px;
+    font-weight: 600;
+    min-height: 36px;
+    font-size: 10pt;
+    min-width: 100px;
+}
+
 QDialogButtonBox QPushButton:hover {
-    background-color: #5c636a; /* Темніший сірий при наведенні */
-    border-color: #565e64;
+    background-color: #d4b876;
+    border-color: #d4b876;
 }
+
 QDialogButtonBox QPushButton:pressed {
-    background-color: #565e64; /* Ще темніший при натисканні */
-    border-color: #51585e;
+    background-color: #b89a4f;
+    border-color: #b89a4f;
 }
 </string>
   </property>
@@ -240,10 +263,10 @@ QDialogButtonBox QPushButton:pressed {
       <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Save</set> <!-- Змінено кнопки -->
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Save</set>
      </property>
      <property name="centerButtons">
-      <bool>false</bool> <!-- Повертаємо стандартне вирівнювання -->
+      <bool>false</bool>
      </property>
     </widget>
    </item>

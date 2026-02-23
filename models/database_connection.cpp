@@ -13,10 +13,125 @@
 #include <QTextStream>
 #include <QDir>
 
+#include <QCoreApplication>
+
+#include "testdata.h"
+
+bool DatabaseManager::checkAndInitDatabase()
+{
+    if (!m_isConnected) return false;
+
+    QStringList tables = m_db.tables();
+    // Простейшая проверка: если нет таблицы customer, считаем что БД пустая
+    if (!tables.contains("customer", Qt::CaseInsensitive)) {
+        qInfo() << "Database tables not found. Creating schema...";
+        if (createSchemaTables()) {
+            qInfo() << "Schema created. Populating test data...";
+            if (!populateTestData(this, 30)) {
+                qWarning() << "Test data population failed during init.";
+            }
+            tables = m_db.tables();
+        }
+        else {
+            return false;
+        }
+    }
+
+    // Lightweight migration for existing installations.
+    QSqlQuery migrationQuery(m_db);
+    if (!migrationQuery.exec("ALTER TABLE customer ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;")) {
+        qWarning() << "Failed to ensure customer.is_admin column:" << migrationQuery.lastError().text();
+    }
+
+    int adminCount = 0;
+    if (migrationQuery.exec("SELECT COUNT(*) FROM customer WHERE COALESCE(is_admin, FALSE) = TRUE;") && migrationQuery.next()) {
+        adminCount = migrationQuery.value(0).toInt();
+    }
+
+    if (adminCount == 0) {
+        if (!migrationQuery.exec("UPDATE customer SET is_admin = TRUE WHERE customer_id = (SELECT customer_id FROM customer ORDER BY customer_id ASC LIMIT 1);")) {
+            qWarning() << "Failed to assign default admin:" << migrationQuery.lastError().text();
+        } else if (migrationQuery.numRowsAffected() > 0) {
+            qInfo() << "Assigned admin role to the first customer account.";
+        }
+    }
+
+    const QStringList performanceIndexes = {
+        "CREATE INDEX IF NOT EXISTS idx_order_customer_date ON \"order\" (customer_id, order_date DESC);",
+        "CREATE INDEX IF NOT EXISTS idx_order_status_order_date ON order_status (order_id, status_date DESC);",
+        "CREATE INDEX IF NOT EXISTS idx_order_item_order ON order_item (order_id);",
+        "CREATE INDEX IF NOT EXISTS idx_comment_book_date ON comment (book_id, comment_date DESC);",
+        "CREATE INDEX IF NOT EXISTS idx_book_genre_language ON book (genre, language);",
+        "CREATE INDEX IF NOT EXISTS idx_book_title_lower ON book (LOWER(title));",
+        "CREATE INDEX IF NOT EXISTS idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));"
+    };
+
+    for (const QString& indexSql : performanceIndexes) {
+        if (!migrationQuery.exec(indexSql)) {
+            qWarning() << "Failed to ensure performance index:" << migrationQuery.lastError().text();
+            qWarning() << "SQL:" << indexSql;
+        }
+    }
+
+    return true;
+}
+
+bool DatabaseManager::resetDatabase()
+{
+    if (!m_isConnected || !m_db.isOpen()) {
+        qWarning() << "Неможливо скинути БД: немає активного з'єднання.";
+        return false;
+    }
+
+    qInfo() << "Скидання бази даних...";
+
+    QSqlQuery query(m_db);
+
+    // Видаляємо всі таблиці у правильному порядку (враховуючи зовнішні ключі)
+    QStringList dropStatements = {
+        "DROP TABLE IF EXISTS order_status CASCADE",
+        "DROP TABLE IF EXISTS order_item CASCADE",
+        "DROP TABLE IF EXISTS comment CASCADE",
+        "DROP TABLE IF EXISTS book_author CASCADE",
+        "DROP TABLE IF EXISTS cart_item CASCADE",
+        "DROP TABLE IF EXISTS \"order\" CASCADE",
+        "DROP TABLE IF EXISTS book CASCADE",
+        "DROP TABLE IF EXISTS author CASCADE",
+        "DROP TABLE IF EXISTS publisher CASCADE",
+        "DROP TABLE IF EXISTS customer CASCADE"
+    };
+
+    for (const QString &sql : dropStatements) {
+        if (!query.exec(sql)) {
+            qCritical() << "Помилка при видаленні таблиці:" << query.lastError().text();
+            qCritical() << "SQL:" << sql;
+            return false;
+        }
+    }
+
+    qInfo() << "Всі таблиці видалено. Створення нової схеми...";
+
+    if (!createSchemaTables()) {
+        qCritical() << "Помилка при створенні схеми!";
+        return false;
+    }
+
+    qInfo() << "Схема створена. Заповнення тестовими даними...";
+
+    if (!populateTestData(this, 30)) {
+        qCritical() << "Помилка при заповненні тестовими даними!";
+        return false;
+    }
+
+    qInfo() << "База даних успішно скинута та заповнена новими даними!";
+    return true;
+}
+
 DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent), m_isConnected(false)
 {
-    if (!loadSqlQueries()) {
-        qCritical() << "ФАТАЛЬНА ПОМИЛКА: Не вдалося завантажити SQL запити. Операції з базою даних, ймовірно, завершаться невдачею.";
+    QString sqlPath = QCoreApplication::applicationDirPath() + "/sql";
+    if (!loadSqlQueries(sqlPath)) {
+        qCritical() << "ФАТАЛЬНА ПОМИЛКА: Не вдалося завантажити SQL запити з" << sqlPath;
     }
 
     if (!QSqlDatabase::isDriverAvailable("QPSQL")) {
@@ -103,6 +218,15 @@ bool DatabaseManager::createSchemaTables()
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderStatusTable"), "Створення order_status");
     if(success) success &= executeQuery(query, getSqlQuery("CreateCommentTable"), "Створення comment");
     if(success) success &= executeQuery(query, getSqlQuery("CreateCartItemTable"), "Створення cart_item");
+
+    // Create indexes for hot read paths
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexOrderCustomerDate"), "Створення індексу idx_order_customer_date");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexOrderStatusOrderDate"), "Створення індексу idx_order_status_order_date");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexOrderItemOrder"), "Створення індексу idx_order_item_order");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexCommentBookDate"), "Створення індексу idx_comment_book_date");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookGenreLanguage"), "Створення індексу idx_book_genre_language");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookTitleLower"), "Створення індексу idx_book_title_lower");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexAuthorFullNameLower"), "Створення індексу idx_author_full_name_lower");
 
     // Create functions and triggers
     if(success) success &= executeQuery(query, getSqlQuery("CreateCalculateAverageRatingFunction"), "Створення функції calculate_average_book_rating");
@@ -279,6 +403,8 @@ bool DatabaseManager::printAllData() const
     return overallSuccess;
 }
 
+#include <QDirIterator>
+
 bool DatabaseManager::loadSqlQueries(const QString& directory)
 {
     m_sqlQueries.clear();
@@ -288,22 +414,24 @@ bool DatabaseManager::loadSqlQueries(const QString& directory)
         return false;
     }
 
-    qInfo() << "Завантаження SQL запитів з каталогу:" << sqlDir.absolutePath();
-    QStringList sqlFiles = sqlDir.entryList(QStringList() << "*.sql", QDir::Files);
+    qInfo() << "Завантаження SQL запитів з каталогу (рекурсивно):" << sqlDir.absolutePath();
+    
+    // Используем QDirIterator для рекурсивного поиска всех .sql файлов
+    QDirIterator::IteratorFlags flags = QDirIterator::Subdirectories;
+    QDirIterator iterator(sqlDir.absolutePath(), QStringList() << "*.sql", QDir::Files, flags);
     bool allParsed = true;
+    int fileCount = 0;
 
-    for (const QString& fileName : sqlFiles) {
-        QString filePath = sqlDir.absoluteFilePath(fileName);
+    while (iterator.hasNext()) {
+        QString filePath = iterator.next();
         if (!parseSqlFile(filePath)) {
             qWarning() << "Не вдалося розібрати SQL файл:" << filePath;
             allParsed = false;
         }
+        fileCount++;
     }
 
-    qInfo() << QString("Завантажено %1 SQL запитів з %2 файлів.").arg(m_sqlQueries.count()).arg(sqlFiles.count());
-    if (!allParsed) {
-         qWarning() << "Деякі SQL файли не вдалося розібрати коректно.";
-    }
+    qInfo() << QString("Завантажено %1 SQL запитів з %2 файлів.").arg(m_sqlQueries.count()).arg(fileCount);
     return allParsed;
 }
 

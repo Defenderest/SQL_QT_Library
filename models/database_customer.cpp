@@ -40,6 +40,7 @@ CustomerLoginInfo DatabaseManager::getCustomerLoginInfo(const QString &email) co
     if (query.next()) {
         loginInfo.customerId = query.value("customer_id").toInt();
         loginInfo.passwordHash = query.value("password_hash").toString();
+        loginInfo.isAdmin = query.value("is_admin").toBool();
         loginInfo.found = true;
         qInfo() << "Дані для входу знайдено для email:" << email << "ID користувача:" << loginInfo.customerId;
     } else {
@@ -378,4 +379,55 @@ bool DatabaseManager::updateCustomerPhone(int customerId, const QString &newPhon
             return false;
         }
     }
+}
+
+// Customer Statistics Methods
+int DatabaseManager::getCustomerOrdersCount(int customerId) const
+{
+    if (!m_isConnected || !m_db.isOpen() || customerId <= 0) {
+        return 0;
+    }
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COUNT(*) FROM customer_order WHERE customer_id = :customerId");
+    query.bindValue(":customerId", customerId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
+}
+
+double DatabaseManager::getCustomerTotalSpent(int customerId) const
+{
+    if (!m_isConnected || !m_db.isOpen() || customerId <= 0) {
+        return 0.0;
+    }
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COALESCE(SUM(total_amount), 0) FROM customer_order WHERE customer_id = :customerId AND order_status = 'completed'");
+    query.bindValue(":customerId", customerId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toDouble();
+    }
+    return 0.0;
+}
+
+int DatabaseManager::getCustomerBooksCount(int customerId) const
+{
+    if (!m_isConnected || !m_db.isOpen() || customerId <= 0) {
+        return 0;
+    }
+
+    QSqlQuery query(m_db);
+    query.prepare("SELECT COALESCE(SUM(quantity), 0) FROM order_item oi "
+                  "JOIN customer_order co ON oi.order_id = co.order_id "
+                  "WHERE co.customer_id = :customerId AND co.order_status = 'completed'");
+    query.bindValue(":customerId", customerId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
 }

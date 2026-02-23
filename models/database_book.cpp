@@ -182,6 +182,74 @@ QList<BookDisplayInfo> DatabaseManager::getFilteredBooksForDisplay(const BookFil
     return books;
 }
 
+QList<BookDisplayInfo> DatabaseManager::searchBooksForDisplay(const QString &queryText, int limit, int offset) const
+{
+    QList<BookDisplayInfo> books;
+    const QString query = queryText.trimmed();
+
+    if (!m_isConnected || !m_db.isOpen()) {
+        qWarning() << "Неможливо виконати пошук книг: немає активного з'єднання з БД.";
+        return books;
+    }
+
+    if (query.isEmpty()) {
+        return getAllBooksForDisplay(limit, offset);
+    }
+
+    QString sql = getSqlQuery("SearchBooksForDisplay");
+    if (sql.isEmpty()) {
+        qCritical() << "SQL запит 'SearchBooksForDisplay' не знайдено.";
+        return books;
+    }
+
+    if (offset > 0) {
+        sql += "\nOFFSET :offset";
+    }
+
+    QSqlQuery sqlQuery(m_db);
+    if (!sqlQuery.prepare(sql)) {
+        qCritical() << "Помилка підготовки запиту 'SearchBooksForDisplay':";
+        qCritical() << sqlQuery.lastError().text();
+        qCritical() << "SQL запит:" << sql;
+        return books;
+    }
+
+    const int effectiveLimit = (limit > 0) ? limit : std::numeric_limits<int>::max();
+    sqlQuery.bindValue(":query", query);
+    sqlQuery.bindValue(":limit", effectiveLimit);
+    if (offset > 0) {
+        sqlQuery.bindValue(":offset", offset);
+    }
+
+    if (!sqlQuery.exec()) {
+        qCritical() << "Помилка при виконанні 'SearchBooksForDisplay':";
+        qCritical() << sqlQuery.lastError().text();
+        qCritical() << "SQL запит:" << sqlQuery.lastQuery();
+        qCritical() << "Прив'язані значення:" << sqlQuery.boundValues();
+        return books;
+    }
+
+    while (sqlQuery.next()) {
+        BookDisplayInfo bookInfo;
+        bookInfo.bookId = sqlQuery.value("book_id").toInt();
+        bookInfo.title = sqlQuery.value("title").toString();
+        bookInfo.price = sqlQuery.value("price").toDouble();
+        bookInfo.coverImagePath = sqlQuery.value("cover_image_path").toString();
+        bookInfo.stockQuantity = sqlQuery.value("stock_quantity").toInt();
+        bookInfo.authors = sqlQuery.value("authors").toString();
+        bookInfo.genre = sqlQuery.value("genre").toString();
+        bookInfo.found = true;
+
+        if (sqlQuery.value("authors").isNull()) {
+            bookInfo.authors = "";
+        }
+
+        books.append(bookInfo);
+    }
+
+    return books;
+}
+
 QStringList DatabaseManager::getAllGenres() const
 {
     QStringList genres;

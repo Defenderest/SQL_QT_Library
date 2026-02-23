@@ -34,7 +34,8 @@ CREATE TABLE customer (
     email VARCHAR(255) UNIQUE NOT NULL, phone VARCHAR(30), address TEXT,
     password_hash VARCHAR(64) NOT NULL,
     loyalty_program BOOLEAN DEFAULT FALSE, join_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    loyalty_points INTEGER DEFAULT 0 CHECK (loyalty_points >= 0)
+    loyalty_points INTEGER DEFAULT 0 CHECK (loyalty_points >= 0),
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- name: CreatePublisherTable
@@ -112,3 +113,24 @@ CREATE TABLE cart_item (
     CONSTRAINT fk_customer_cart FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE,
     CONSTRAINT fk_book_cart FOREIGN KEY (book_id) REFERENCES book(book_id) ON DELETE CASCADE
 );
+
+-- name: CreateIndexOrderCustomerDate
+CREATE INDEX idx_order_customer_date ON "order" (customer_id, order_date DESC);
+
+-- name: CreateIndexOrderStatusOrderDate
+CREATE INDEX idx_order_status_order_date ON order_status (order_id, status_date DESC);
+
+-- name: CreateIndexOrderItemOrder
+CREATE INDEX idx_order_item_order ON order_item (order_id);
+
+-- name: CreateIndexCommentBookDate
+CREATE INDEX idx_comment_book_date ON comment (book_id, comment_date DESC);
+
+-- name: CreateIndexBookGenreLanguage
+CREATE INDEX idx_book_genre_language ON book (genre, language);
+
+-- name: CreateIndexBookTitleLower
+CREATE INDEX idx_book_title_lower ON book (LOWER(title));
+
+-- name: CreateIndexAuthorFullNameLower
+CREATE INDEX idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));

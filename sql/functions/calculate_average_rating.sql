@@ -1,3 +1,7 @@
+-- name: DropCalculateAverageRatingFunction
+DROP FUNCTION IF EXISTS calculate_average_book_rating(INT);
+
+-- name: CreateCalculateAverageRatingFunction
 CREATE OR REPLACE FUNCTION calculate_average_book_rating(book_id_param INT)
 RETURNS NUMERIC AS $$
 DECLARE
@@ -7,7 +11,6 @@ BEGIN
     INTO avg_rating
     FROM comment
     WHERE book_id = book_id_param AND rating > 0;
-
     RETURN avg_rating;
 END;
 $$ LANGUAGE plpgsql;

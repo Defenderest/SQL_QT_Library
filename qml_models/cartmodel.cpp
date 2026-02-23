@@ -1,6 +1,11 @@
 #include "cartmodel.h"
 #include "../core/database.h"
+#include <QCryptographicHash>
+#include <QDateTime>
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QUrl>
 
 CartModel::CartModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -139,6 +144,36 @@ void CartModel::loadCart()
     recalculateTotals();
 }
 
+QString CartModel::liqPayPublicKey() const
+{
+    return m_liqPayPublicKey;
+}
+
+void CartModel::setLiqPayPublicKey(const QString& publicKey)
+{
+    const QString normalized = publicKey.trimmed();
+    if (m_liqPayPublicKey == normalized) {
+        return;
+    }
+    m_liqPayPublicKey = normalized;
+    emit liqPayConfigChanged();
+}
+
+QString CartModel::liqPayPrivateKey() const
+{
+    return m_liqPayPrivateKey;
+}
+
+void CartModel::setLiqPayPrivateKey(const QString& privateKey)
+{
+    const QString normalized = privateKey.trimmed();
+    if (m_liqPayPrivateKey == normalized) {
+        return;
+    }
+    m_liqPayPrivateKey = normalized;
+    emit liqPayConfigChanged();
+}
+
 void CartModel::addItem(int bookId)
 {
     if (!m_dbManager || m_customerId <= 0) {
@@ -247,6 +282,134 @@ void CartModel::clearCart()
     }
 
     loadCart();
+}
+
+bool CartModel::checkout(const QString& shippingAddress, const QString& paymentMethod)
+{
+    if (!m_dbManager || m_customerId <= 0) {
+        const QString message = "Database manager not set";
+        emit errorOccurred(message);
+        emit checkoutFailed(message);
+        return false;
+    }
+
+    if (shippingAddress.trimmed().isEmpty()) {
+        const QString message = "Shipping address is required";
+        emit errorOccurred(message);
+        emit checkoutFailed(message);
+        return false;
+    }
+
+    if (m_items.isEmpty()) {
+        const QString message = "Cart is empty";
+        emit checkoutFailed(message);
+        return false;
+    }
+
+    QMap<int, int> itemsToOrder;
+    for (const auto& item : m_items) {
+        if (item.bookId > 0 && item.quantity > 0) {
+            itemsToOrder[item.bookId] = item.quantity;
+        }
+    }
+
+    if (itemsToOrder.isEmpty()) {
+        const QString message = "Cart contains no valid items";
+        emit checkoutFailed(message);
+        return false;
+    }
+
+    int newOrderId = -1;
+    const double total = m_dbManager->createOrder(
+        m_customerId,
+        itemsToOrder,
+        shippingAddress.trimmed(),
+        paymentMethod.trimmed(),
+        newOrderId
+    );
+
+    if (total < 0.0 || newOrderId <= 0) {
+        const QString message = "Failed to create order";
+        emit errorOccurred(message);
+        emit checkoutFailed(message);
+        return false;
+    }
+
+    loadCart();
+    emit checkoutSucceeded(newOrderId);
+    return true;
+}
+
+void CartModel::startLiqPayCheckout(const QString& shippingAddress)
+{
+    if (m_customerId <= 0) {
+        emit liqPayCheckoutFailed("Користувач не авторизований");
+        return;
+    }
+
+    const QString cleanAddress = shippingAddress.trimmed();
+    if (cleanAddress.isEmpty()) {
+        emit liqPayCheckoutFailed("Вкажіть адресу доставки");
+        return;
+    }
+
+    if (m_items.isEmpty()) {
+        emit liqPayCheckoutFailed("Кошик порожній");
+        return;
+    }
+
+    if (m_liqPayPublicKey.trimmed().isEmpty() || m_liqPayPrivateKey.trimmed().isEmpty()) {
+        emit liqPayCheckoutFailed("Не знайдено ключі LiqPay. Потрібні змінні: LIQPAY_PUBLIC_KEY/LIQPAY_PRIVATE_KEY (або LIQPAY_SANDBOX_PUBLIC_KEY/LIQPAY_SANDBOX_PRIVATE_KEY, або PUBLIC_KEY/PRIVATE_KEY)");
+        return;
+    }
+
+    const QString orderId = QString("COURSE_%1_%2")
+        .arg(m_customerId)
+        .arg(QDateTime::currentMSecsSinceEpoch());
+    const QString checkoutUrl = buildLiqPayCheckoutUrl(cleanAddress, orderId);
+    if (checkoutUrl.isEmpty()) {
+        emit liqPayCheckoutFailed("Не вдалося сформувати посилання LiqPay");
+        return;
+    }
+
+    emit liqPayCheckoutOpened(checkoutUrl);
+}
+
+QString CartModel::buildLiqPayCheckoutUrl(const QString& shippingAddress, const QString& orderId) const
+{
+    if (m_liqPayPublicKey.trimmed().isEmpty() || m_liqPayPrivateKey.trimmed().isEmpty()) {
+        return QString();
+    }
+
+    const QString totalAmount = QString::number(totalPrice(), 'f', 2);
+    const QString description = QString("Курсова: замовлення книг, адреса: %1").arg(shippingAddress);
+
+    QJsonObject payload;
+    payload["public_key"] = m_liqPayPublicKey;
+    payload["version"] = "3";
+    payload["action"] = "pay";
+    payload["amount"] = totalAmount;
+    payload["currency"] = "UAH";
+    payload["description"] = description;
+    payload["order_id"] = orderId;
+    payload["sandbox"] = "1";
+    payload["language"] = "uk";
+    payload["result_url"] = "https://liqpay.local/result";
+
+    const QByteArray jsonPayload = QJsonDocument(payload).toJson(QJsonDocument::Compact);
+    const QByteArray dataBase64 = jsonPayload.toBase64();
+    const QByteArray signature = buildLiqPaySignature(m_liqPayPrivateKey, dataBase64);
+
+    QString url = "https://www.liqpay.ua/api/3/checkout";
+    url += "?data=" + QString::fromUtf8(QUrl::toPercentEncoding(QString::fromUtf8(dataBase64)));
+    url += "&signature=" + QString::fromUtf8(QUrl::toPercentEncoding(QString::fromUtf8(signature)));
+    return url;
+}
+
+QByteArray CartModel::buildLiqPaySignature(const QString& privateKey, const QByteArray& dataBase64)
+{
+    const QByteArray signInput = privateKey.toUtf8() + dataBase64 + privateKey.toUtf8();
+    return QCryptographicHash::hash(signInput, QCryptographicHash::Sha1).toBase64();
 }
 
 void CartModel::recalculateTotals()

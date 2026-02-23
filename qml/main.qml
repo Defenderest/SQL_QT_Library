@@ -2,20 +2,19 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "components"
-import "pages"
 import QtQuick.Window 2.15
 
 ApplicationWindow {
     id: root
 
     visible: true
-    // Размер окна по умолчанию
+    // Р Р°Р·РјРµСЂ РѕРєРЅР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
     width: 1500
     height: 800
     minimumWidth: 900
     minimumHeight: 600
 
-    // Центрируем окно на экране
+    // Р¦РµРЅС‚СЂРёСЂСѓРµРј РѕРєРЅРѕ РЅР° СЌРєСЂР°РЅРµ
     x: Screen.width / 2 - width / 2
     y: Screen.height / 2 - height / 2
 
@@ -24,14 +23,70 @@ ApplicationWindow {
     title: "OBSIDIAN.LUXE | BookStore"
     color: Theme.bgBody
 
-    // Свойства
+    // РЎРІРѕР№СЃС‚РІР°
     property int currentCustomerId: appContext ? appContext.currentCustomerId : -1
     property string currentPage: "home"
+    property int selectedBookId: 0
+    property int selectedAuthorId: 0
 
-    // Адаптивные свойства - масштабируем контент под размер окна
+    // РђРґР°РїС‚РёРІРЅС‹Рµ СЃРІРѕР№СЃС‚РІР° - РјР°СЃС€С‚Р°Р±РёСЂСѓРµРј РєРѕРЅС‚РµРЅС‚ РїРѕРґ СЂР°Р·РјРµСЂ РѕРєРЅР°
     property real contentScale: Math.min(width / 1280, height / 800)
     property bool isCompact: width < 1100 || height < 700
     property bool isMobile: width < 900
+
+    function applyGlobalBookSearch() {
+        var searchQuery = searchField.text.trim()
+
+        if (root.currentPage !== "books") {
+            root.currentPage = "books"
+            root.replacePage("books")
+            Qt.callLater(function() {
+                if (searchQuery.length === 0) {
+                    bookModel.loadAllBooks()
+                } else {
+                    bookModel.searchBooks(searchQuery)
+                }
+            })
+            return
+        }
+
+        if (searchQuery.length === 0) {
+            bookModel.loadAllBooks()
+        } else {
+            bookModel.searchBooks(searchQuery)
+        }
+    }
+
+    function getPageSource(page) {
+        switch(page) {
+            case "home": return "qrc:/pages/HomePage.qml"
+            case "books": return "qrc:/pages/BooksPage.qml"
+            case "bookDetails": return "qrc:/pages/BookDetailsPage.qml"
+            case "authors": return "qrc:/pages/AuthorsPage.qml"
+            case "authorDetails": return "qrc:/pages/AuthorDetailsPage.qml"
+            case "cart": return "qrc:/pages/CartPage.qml"
+            case "orders": return "qrc:/pages/OrdersPage.qml"
+            case "admin": return "qrc:/pages/AdminPage.qml"
+            case "profile": return "qrc:/pages/ProfilePage.qml"
+            default: return "qrc:/pages/HomePage.qml"
+        }
+    }
+
+    function getPageProperties(page) {
+        if (page === "bookDetails") {
+            return { "bookId": root.selectedBookId }
+        }
+        if (page === "authorDetails") {
+            return { "authorId": root.selectedAuthorId }
+        }
+        return {}
+    }
+
+    function replacePage(page) {
+        var source = getPageSource(page)
+        var props = getPageProperties(page)
+        stackView.replace(source, props)
+    }
 
     Component.onCompleted: {
         console.log("Main window loaded, current page:", currentPage)
@@ -40,15 +95,15 @@ ApplicationWindow {
         console.log("StackView current item:", stackView.currentItem)
     }
 
-    // Шрифт по умолчанию
+    // РЁСЂРёС„С‚ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
     font.family: Theme.fontBody.family
 
-    // Главный layout
+    // Р“Р»Р°РІРЅС‹Р№ layout
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // Боковая панель (Dock)
+        // Р‘РѕРєРѕРІР°СЏ РїР°РЅРµР»СЊ (Dock)
         Sidebar {
             id: sidebar
             Layout.fillHeight: true
@@ -56,25 +111,25 @@ ApplicationWindow {
             onNavigate: function(page) {
                 if (root.currentPage !== page) {
                     root.currentPage = page
-                    stackView.replace(getPageComponent(page))
+                    root.replacePage(page)
                 }
             }
         }
 
-        // Контентная область
+        // РљРѕРЅС‚РµРЅС‚РЅР°СЏ РѕР±Р»Р°СЃС‚СЊ
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 0
 
-            // Верхняя панель (Header)
+            // Р’РµСЂС…РЅСЏСЏ РїР°РЅРµР»СЊ (Header)
             Rectangle {
                 Layout.fillWidth: true
-                // Увеличенная высота header
+                // РЈРІРµР»РёС‡РµРЅРЅР°СЏ РІС‹СЃРѕС‚Р° header
                 height: 120
                 color: "transparent"
 
-                // Нижняя граница
+                // РќРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р°
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
@@ -91,17 +146,23 @@ ApplicationWindow {
                     anchors.bottomMargin: 35
                     spacing: Theme.spacingXL
 
-                    // Заголовок страницы
+                    // Р—Р°РіРѕР»РѕРІРѕРє СЃС‚СЂР°РЅРёС†С‹
                     Label {
                         id: pageTitle
                         text: {
                             switch(root.currentPage) {
-                                case "home": return "Головна"
-                                case "books": return "Колекція"
-                                case "authors": return "Автори"
-                                case "orders": return "Історія"
-                                case "profile": return "Профіль"
-                                case "cart": return "Кошик"
+                                case "home": return "\u0413\u043e\u043b\u043e\u0432\u043d\u0430"
+                                case "books": return "\u041a\u043e\u043b\u0435\u043a\u0446\u0456\u044f"
+                                case "authors": return "\u0410\u0432\u0442\u043e\u0440\u0438"
+                                case "orders": return "\u0406\u0441\u0442\u043e\u0440\u0456\u044f"
+                                case "admin": return "\u0410\u0434\u043c\u0456\u043d \u043f\u0430\u043d\u0435\u043b\u044c"
+                                case "profile": return "\u041f\u0440\u043e\u0444\u0456\u043b\u044c"
+                                case "cart": return "\u041a\u043e\u0448\u0438\u043a"
+                                case "bookDetails": return "\u041a\u043d\u0438\u0433\u0430"
+                                case "authorDetails":
+                                    return (authorDetailsModel && authorDetailsModel.fullName && authorDetailsModel.fullName.length > 0)
+                                            ? authorDetailsModel.fullName
+                                            : "\u0410\u0432\u0442\u043e\u0440"
                                 default: return ""
                             }
                         }
@@ -113,12 +174,12 @@ ApplicationWindow {
 
                     Item { Layout.fillWidth: true }
 
-                    // Поиск
+                    // РџРѕРёСЃРє
                     TextField {
                         id: searchField
                         Layout.preferredWidth: 300
                         Layout.preferredHeight: 50
-                        placeholderText: "Пошук..."
+                        placeholderText: "\u041f\u043e\u0448\u0443\u043a..."
                         placeholderTextColor: Theme.textSecondary
                         color: Theme.textPrimary
                         verticalAlignment: Text.AlignVCenter
@@ -126,7 +187,7 @@ ApplicationWindow {
                         background: Rectangle {
                             color: "transparent"
 
-                            // Нижняя граница
+                            // РќРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р°
                             Rectangle {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
@@ -140,20 +201,26 @@ ApplicationWindow {
                         font.pixelSize: 14
 
                         onAccepted: {
-                            console.log("Search:", text)
+                            root.applyGlobalBookSearch()
+                        }
+
+                        onTextChanged: {
+                            if (text.trim().length === 0 && root.currentPage === "books") {
+                                bookModel.loadAllBooks()
+                            }
                         }
                     }
                 }
             }
 
-            // Область страниц
+            // РћР±Р»Р°СЃС‚СЊ СЃС‚СЂР°РЅРёС†
             StackView {
                 id: stackView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                // Используем Loader для отложенной загрузки
-                initialItem: HomePage {}
+                // РСЃРїРѕР»СЊР·СѓРµРј Loader РґР»СЏ РѕС‚Р»РѕР¶РµРЅРЅРѕР№ Р·Р°РіСЂСѓР·РєРё
+                initialItem: "qrc:/pages/HomePage.qml"
 
                 replaceEnter: Transition {
                     PropertyAnimation {
@@ -174,7 +241,7 @@ ApplicationWindow {
                 }
             }
 
-            // Fallback - показываем если StackView пустой
+            // Fallback - РїРѕРєР°Р·С‹РІР°РµРј РµСЃР»Рё StackView РїСѓСЃС‚РѕР№
             Rectangle {
                 visible: stackView.currentItem === null
                 Layout.fillWidth: true
@@ -187,7 +254,7 @@ ApplicationWindow {
 
                     Label {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Завантаження..."
+                        text: "\u0417\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f..."
                         font.pixelSize: 24
                         color: Theme.textPrimary
                     }
@@ -219,47 +286,20 @@ ApplicationWindow {
         }
     }
 
-    // Компоненты страниц для навигации
-    Component { id: homePageComponent; HomePage {} }
-    Component { id: booksPageComponent; BooksPage {} }
-    Component { id: authorsPageComponent; AuthorsPage {} }
-    Component { id: cartPageComponent; CartPage {} }
-    Component { id: ordersPageComponent; OrdersPage {} }
-    Component { id: profilePageComponent; ProfilePage {} }
-
-    // Функция получения компонента страницы
-    function getPageComponent(page) {
-        switch(page) {
-            case "home": return homePageComponent
-            case "books": return booksPageComponent
-            case "authors": return authorsPageComponent
-            case "cart": return cartPageComponent
-            case "orders": return ordersPageComponent
-            case "profile": return profilePageComponent
-            default: return homePageComponent
-        }
-    }
-
-    // Функция навигации (вызывается из C++)
+    // Р¤СѓРЅРєС†РёСЏ РЅР°РІРёРіР°С†РёРё (РІС‹Р·С‹РІР°РµС‚СЃСЏ РёР· C++)
     function navigateToPage(pageName) {
         console.log("Navigating to:", pageName)
-        var component = getPageComponent(pageName)
-        if (component && stackView.currentItem !== component) {
-            stackView.replace(component)
-        }
+        root.replacePage(pageName)
     }
 
-    // Обработка навигации от AppContext
+    // РћР±СЂР°Р±РѕС‚РєР° РЅР°РІРёРіР°С†РёРё РѕС‚ AppContext
     Connections {
         target: appContext
         function onNavigateToPage(page) {
             console.log("Navigate to page signal:", page)
             if (root.currentPage !== page) {
                 root.currentPage = page
-                var component = getPageComponent(page)
-                if (component) {
-                    stackView.replace(component)
-                }
+                root.replacePage(page)
             }
         }
     }

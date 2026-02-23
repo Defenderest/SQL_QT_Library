@@ -1,5 +1,5 @@
 -- name: GetCustomerLoginInfoByEmail
-SELECT customer_id, password_hash
+SELECT customer_id, password_hash, COALESCE(is_admin, FALSE) AS is_admin
 FROM customer
 WHERE email = :email;
 
@@ -38,3 +38,22 @@ WHERE customer_id = :customerId;
 
 -- name: CheckCustomerExistsById
 SELECT 1 FROM customer WHERE customer_id = :customerId;
+
+-- name: GetAllCustomersForAdmin
+SELECT
+    customer_id,
+    first_name,
+    last_name,
+    email,
+    phone,
+    address,
+    join_date,
+    loyalty_points,
+    COALESCE(is_admin, FALSE) AS is_admin
+FROM customer
+ORDER BY customer_id;
+
+-- name: SetCustomerAdminRole
+UPDATE customer
+SET is_admin = :is_admin
+WHERE customer_id = :customer_id;

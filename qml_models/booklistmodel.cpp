@@ -149,14 +149,21 @@ void BookListModel::loadFilteredBooks(const QString& genre, const QString& langu
 
 void BookListModel::searchBooks(const QString& query)
 {
-    if (!m_dbManager || query.isEmpty()) {
-        clear();
+    if (!m_dbManager) {
+        emit errorOccurred("Database manager not set");
         return;
     }
 
-    // TODO: Implement search in DatabaseManager
-    // For now, reload full catalog instead of a genre subset
-    loadAllBooks();
+    const QString trimmedQuery = query.trimmed();
+    if (trimmedQuery.isEmpty()) {
+        loadAllBooks();
+        return;
+    }
+
+    beginResetModel();
+    m_books = m_dbManager->searchBooksForDisplay(trimmedQuery);
+    endResetModel();
+    emit countChanged();
 }
 
 void BookListModel::clear()

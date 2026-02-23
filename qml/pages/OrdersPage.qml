@@ -46,7 +46,7 @@ ScrollView {
 
                 Label {
                     Layout.preferredWidth: 180
-                    text: "Date"
+                    text: "\u0414\u0430\u0442\u0430"
                     font.family: Theme.fontCaption.family
                     font.pixelSize: 10
                     font.capitalization: Font.AllUppercase
@@ -55,7 +55,7 @@ ScrollView {
 
                 Label {
                     Layout.fillWidth: true
-                    text: "Items"
+                    text: "\u0422\u043e\u0432\u0430\u0440\u0438"
                     font.family: Theme.fontCaption.family
                     font.pixelSize: 10
                     font.capitalization: Font.AllUppercase
@@ -64,7 +64,7 @@ ScrollView {
 
                 Label {
                     Layout.preferredWidth: 160
-                    text: "Total"
+                    text: "\u0421\u0443\u043c\u0430"
                     font.family: Theme.fontCaption.family
                     font.pixelSize: 10
                     font.capitalization: Font.AllUppercase
@@ -73,7 +73,7 @@ ScrollView {
 
                 Label {
                     Layout.preferredWidth: 160
-                    text: "Status"
+                    text: "\u0421\u0442\u0430\u0442\u0443\u0441"
                     font.family: Theme.fontCaption.family
                     font.pixelSize: 10
                     font.capitalization: Font.AllUppercase
@@ -135,7 +135,7 @@ ScrollView {
 
                         Label {
                             Layout.preferredWidth: 160
-                            text: "UAH " + Number(model.totalAmount).toFixed(2)
+                            text: Number(model.totalAmount).toFixed(2) + " \u0433\u0440\u043d"
                             color: Theme.textPrimary
                             font.pixelSize: 14
                         }

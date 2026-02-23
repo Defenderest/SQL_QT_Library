@@ -1,0 +1,112 @@
+/* =====================================================
+   SIDEBAR - FLOATING DOCK DESIGN
+   ===================================================== */
+
+/* --- Floating Panel --- */
+QFrame#sidebarFrame {
+    background-color: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    margin: 12px;
+    min-width: 200px;
+    max-width: 200px;
+}
+
+/* Drop shadow effect via border styling */
+#sidebarFrame {
+    background-color: #141414;
+    border: 1px solid #333333;
+    border-radius: 20px;
+}
+
+/* --- Logo --- */
+QLabel#sidebarLogoLabel {
+    color: #c9a962;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 25px 15px 20px 20px;
+    background: transparent;
+}
+
+/* --- Modern Separator --- */
+QFrame#sidebarSeparator {
+    background-color: #2a2a2a;
+    max-height: 1px;
+    margin: 0px 20px 15px 20px;
+    border: none;
+}
+
+/* --- Floating Button Style --- */
+QPushButton#navHomeButton,
+QPushButton#navBooksButton,
+QPushButton#navAuthorsButton,
+QPushButton#navOrdersButton,
+QPushButton#navProfileButton {
+    color: #666666;
+    background-color: transparent;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 4px 12px;
+    min-height: 48px;
+    letter-spacing: 0.3px;
+    icon-size: 22px;
+}
+
+/* Hover - subtle lift effect */
+QPushButton#navHomeButton:hover,
+QPushButton#navBooksButton:hover,
+QPushButton#navAuthorsButton:hover,
+QPushButton#navOrdersButton:hover,
+QPushButton#navProfileButton:hover {
+    background-color: #1f1f1f;
+    color: #c9a962;
+}
+
+/* Active - Filled Gold with shadow feel */
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: #c9a962;
+    color: #0d0d0d;
+    font-weight: 600;
+    border: none;
+}
+
+/* Active hover */
+QPushButton#navHomeButton:checked:hover,
+QPushButton#navBooksButton:checked:hover,
+QPushButton#navAuthorsButton:checked:hover,
+QPushButton#navOrdersButton:checked:hover,
+QPushButton#navProfileButton:checked:hover {
+    background-color: #d4b876;
+}
+
+/* Collapsed - Compact circular */
+QPushButton#navHomeButton[collapsed="true"],
+QPushButton#navBooksButton[collapsed="true"],
+QPushButton#navAuthorsButton[collapsed="true"],
+QPushButton#navOrdersButton[collapsed="true"],
+QPushButton#navProfileButton[collapsed="true"] {
+    padding: 14px 0;
+    margin: 4px 10px;
+    border-radius: 12px;
+    min-width: 48px;
+    max-width: 48px;
+    text-align: center;
+}
+
+QPushButton#navHomeButton[collapsed="true"]:checked,
+QPushButton#navBooksButton[collapsed="true"]:checked,
+QPushButton#navAuthorsButton[collapsed="true"]:checked,
+QPushButton#navOrdersButton[collapsed="true"]:checked,
+QPushButton#navProfileButton[collapsed="true"]:checked {
+    background-color: #c9a962;
+    color: #0d0d0d;
+}

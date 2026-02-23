@@ -35,6 +35,8 @@ public:
                            const QString &password);
 
     bool createSchemaTables();
+    bool checkAndInitDatabase();
+    bool resetDatabase();
 
     QSqlError lastError() const;
     void closeConnection();
@@ -62,6 +64,11 @@ public:
 
     bool updateCustomerName(int customerId, const QString &firstName, const QString &lastName);
 
+    // Customer statistics
+    int getCustomerOrdersCount(int customerId) const;
+    double getCustomerTotalSpent(int customerId) const;
+    int getCustomerBooksCount(int customerId) const;
+
     bool updateCustomerAddress(int customerId, const QString &newAddress);
 
     bool addLoyaltyPoints(int customerId, int pointsToAdd);
@@ -87,6 +94,26 @@ public:
     QList<BookDisplayInfo> getSimilarBooks(int currentBookId, const QString &genre, int limit = 5) const;
 
     QList<BookDisplayInfo> getFilteredBooksForDisplay(const BookFilterCriteria &criteria) const;
+    QList<BookDisplayInfo> searchBooksForDisplay(const QString &query, int limit = -1, int offset = 0) const;
+    QList<QVariantMap> getAllBooksForAdmin() const;
+    bool addBookForAdmin(const QString &title,
+                         double price,
+                         int stockQuantity,
+                         const QString &genre,
+                         const QString &language,
+                         const QString &description,
+                         const QString &coverImagePath,
+                         int &newBookId);
+    bool updateBookByAdmin(int bookId,
+                           const QString &title,
+                           double price,
+                           int stockQuantity,
+                           const QString &genre,
+                           const QString &language,
+                           const QString &description,
+                           const QString &coverImagePath);
+    bool updateBookPriceByAdmin(int bookId, double price);
+    bool deleteBookByAdmin(int bookId);
 
     QStringList getAllGenres() const;
     QStringList getAllLanguages() const;
@@ -95,6 +122,12 @@ public:
     bool addOrUpdateCartItem(int customerId, int bookId, int quantity);
     bool removeCartItem(int customerId, int bookId);
     bool clearCart(int customerId);
+    QList<QVariantMap> getAllCommentsForAdmin() const;
+    bool deleteCommentByAdmin(int commentId);
+    QList<QVariantMap> getAllCustomersForAdmin() const;
+    bool setCustomerAdminRole(int customerId, bool isAdmin);
+    QList<QVariantMap> getAllOrdersForAdmin() const;
+    bool addOrderStatusByAdmin(int orderId, const QString &status, const QString &trackingNumber = QString());
 
     bool isConnected() const;
     QSqlDatabase& database();

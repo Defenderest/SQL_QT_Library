@@ -29,6 +29,7 @@ struct AuthorDisplayInfo {
 struct CustomerLoginInfo {
     int customerId = -1;
     QString passwordHash;
+    bool isAdmin = false;
     bool found = false;
 };
 
@@ -80,6 +81,7 @@ struct OrderDisplayInfo {
     int orderId;
     QDateTime orderDate;
     double totalAmount;
+    QString status; // Додано поле статусу (поточного)
     QString shippingAddress;
     QString paymentMethod;
     QList<OrderItemDisplayInfo> items;
@@ -101,9 +103,14 @@ struct CustomerProfileInfo {
 };
 
 struct CartItem {
-    BookDisplayInfo book;
+    int bookId;
+    QString title;
+    QString author;
+    double price;
     int quantity;
+    QString coverImagePath;
 };
+
 
 struct SearchSuggestionInfo {
     enum SuggestionType { Book, Author };

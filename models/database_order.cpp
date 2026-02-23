@@ -4,6 +4,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
+#include <QHash>
 #include <QMap>
 #include <QDateTime>
 
@@ -36,27 +37,22 @@ OrderDisplayInfo DatabaseManager::getOrderDetailsById(int orderId) const
     }
 
     if (orderQuery.next()) {
-        QString dateString = orderQuery.value("order_date").toString();
+        const QVariant rawOrderDate = orderQuery.value("order_date");
         orderInfo.orderId = orderQuery.value("order_id").toInt();
-        orderInfo.orderDate = QDateTime();
-
-        if (!dateString.isEmpty()) {
-            orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODateWithMs);
-            if (!orderInfo.orderDate.isValid()) {
-                orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODate);
+        orderInfo.orderDate = rawOrderDate.toDateTime();
+        if (!orderInfo.orderDate.isValid()) {
+            const QString dateString = rawOrderDate.toString();
+            if (!dateString.isEmpty()) {
+                orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODateWithMs);
+                if (!orderInfo.orderDate.isValid()) {
+                    orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODate);
+                }
             }
         }
         orderInfo.totalAmount = orderQuery.value("total_amount").toDouble();
         orderInfo.shippingAddress = orderQuery.value("shipping_address").toString();
         orderInfo.paymentMethod = orderQuery.value("payment_method").toString();
-     qDebug() << "[DEBUG] Order ID:" << orderInfo.orderId
-              << "Raw order_date value (CAST to TEXT in SQL):" << dateString;
-     qDebug() << "[DEBUG] Parsed QDateTime (after string parse attempts):" << orderInfo.orderDate
-              << "Is Valid:" << orderInfo.orderDate.isValid();
-     if (!orderInfo.orderDate.isValid() && !dateString.isEmpty()) {
-          qWarning() << "[DEBUG] Failed to parse date string:" << dateString << "using ISODate/ISODateWithMs formats.";
-       }
-       orderInfo.found = true;
+        orderInfo.found = true;
         qInfo() << "Order header found for ID:" << orderId;
     } else {
         qWarning() << "Order not found for ID:" << orderId;
@@ -107,6 +103,7 @@ OrderDisplayInfo DatabaseManager::getOrderDetailsById(int orderId) const
             statusInfo.statusDate = statusQuery.value("status_date").toDateTime();
             statusInfo.trackingNumber = statusQuery.value("tracking_number").toString();
             orderInfo.statuses.append(statusInfo);
+            orderInfo.status = statusInfo.status;
         }
         qInfo() << "Fetched" << orderInfo.statuses.size() << "statuses for order ID:" << orderId;
     }
@@ -255,7 +252,7 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
             success = false;
         } else {
             qInfo() << "Executing SQL 'UpdateOrderTotalAmount' for order ID:" << newOrderId;
-            query.bindValue(":total_amount", calculatedTotalAmount);
+            query.bindValue(":total", calculatedTotalAmount);
             query.bindValue(":order_id", newOrderId);
             if (!query.exec()) {
                 qCritical() << "Помилка виконання 'UpdateOrderTotalAmount' для замовлення ID" << newOrderId << ":" << query.lastError().text();
@@ -278,12 +275,30 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
             qInfo() << "Executing SQL 'InsertOrderStatus' for order ID:" << newOrderId;
             query.bindValue(":order_id", newOrderId);
             query.bindValue(":status", tr("Нове"));
-            query.bindValue(":status_date", QDateTime::currentDateTime());
             if (!query.exec()) {
                 qCritical() << "Помилка виконання 'InsertOrderStatus' для замовлення ID" << newOrderId << ":" << query.lastError().text();
                 success = false;
             } else {
                 qInfo() << "Додано початковий статус 'Нове' для замовлення ID" << newOrderId;
+            }
+        }
+    }
+
+    if (success) {
+        const QString clearCartSQL = getSqlQuery("ClearCartByCustomerId");
+        if (clearCartSQL.isEmpty()) {
+            qCritical() << "SQL запит 'ClearCartByCustomerId' не знайдено.";
+            success = false;
+        } else if (!query.prepare(clearCartSQL)) {
+            qCritical() << "Помилка підготовки запиту 'ClearCartByCustomerId':" << query.lastError().text();
+            success = false;
+        } else {
+            query.bindValue(":customerId", customerId);
+            if (!query.exec()) {
+                qCritical() << "Помилка виконання 'ClearCartByCustomerId' для customer ID" << customerId << ":" << query.lastError().text();
+                success = false;
+            } else {
+                qInfo() << "Кошик очищено після створення замовлення для customer ID" << customerId;
             }
         }
     }
@@ -339,8 +354,8 @@ QList<OrderDisplayInfo> DatabaseManager::getCustomerOrdersForDisplay(int custome
         return orders;
     }
 
-    const QString itemsSql = getSqlQuery("GetOrderItemsByOrderId");
-    const QString statusesSql = getSqlQuery("GetOrderStatusesByOrderId");
+    const QString itemsSql = getSqlQuery("GetOrderItemsByCustomerId");
+    const QString statusesSql = getSqlQuery("GetOrderStatusesByCustomerId");
 
     if (itemsSql.isEmpty() || statusesSql.isEmpty()) {
         qCritical() << "Помилка завантаження SQL запитів для позицій або статусів замовлень.";
@@ -349,76 +364,91 @@ QList<OrderDisplayInfo> DatabaseManager::getCustomerOrdersForDisplay(int custome
 
     QSqlQuery itemQuery(m_db);
     if (!itemQuery.prepare(itemsSql)) {
-         qCritical() << "Помилка підготовки запиту 'GetOrderItemsByOrderId' (для списку замовлень):" << itemQuery.lastError().text();
+         qCritical() << "Помилка підготовки запиту 'GetOrderItemsByCustomerId':" << itemQuery.lastError().text();
          return orders;
     }
 
     QSqlQuery statusQuery(m_db);
      if (!statusQuery.prepare(statusesSql)) {
-         qCritical() << "Помилка підготовки запиту 'GetOrderStatusesByOrderId' (для списку замовлень):" << statusQuery.lastError().text();
+         qCritical() << "Помилка підготовки запиту 'GetOrderStatusesByCustomerId':" << statusQuery.lastError().text();
          return orders;
      }
 
+    QHash<int, int> orderIndexById;
 
-    qInfo() << "Processing orders for customer ID:" << customerId;
-    int orderCount = 0;
+    qInfo() << "Processing order headers for customer ID:" << customerId;
     while (orderQuery.next()) {
         OrderDisplayInfo orderInfo;
-        QString dateString = orderQuery.value("order_date").toString();
+        const QVariant rawOrderDate = orderQuery.value("order_date");
         orderInfo.orderId = orderQuery.value("order_id").toInt();
-        orderInfo.orderDate = QDateTime();
-
-        if (!dateString.isEmpty()) {
-            orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODateWithMs);
-            if (!orderInfo.orderDate.isValid()) {
-                orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODate);
+        orderInfo.orderDate = rawOrderDate.toDateTime();
+        if (!orderInfo.orderDate.isValid()) {
+            const QString dateString = rawOrderDate.toString();
+            if (!dateString.isEmpty()) {
+                orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODateWithMs);
+                if (!orderInfo.orderDate.isValid()) {
+                    orderInfo.orderDate = QDateTime::fromString(dateString, Qt::ISODate);
+                }
             }
         }
         orderInfo.totalAmount = orderQuery.value("total_amount").toDouble();
         orderInfo.shippingAddress = orderQuery.value("shipping_address").toString();
         orderInfo.paymentMethod = orderQuery.value("payment_method").toString();
-       qDebug() << "[DEBUG] Customer Order ID:" << orderInfo.orderId
-                << "Raw order_date value (CAST to TEXT in SQL):" << dateString;
-       qDebug() << "[DEBUG] Parsed QDateTime (after string parse attempts):" << orderInfo.orderDate
-                << "Is Valid:" << orderInfo.orderDate.isValid();
-       if (!orderInfo.orderDate.isValid() && !dateString.isEmpty()) {
-            qWarning() << "[DEBUG] Failed to parse date string:" << dateString << "using ISODate/ISODateWithMs formats.";
-       }
 
-        itemQuery.bindValue(":orderId", orderInfo.orderId);
-        qInfo() << "Executing SQL 'GetOrderItemsByOrderId' for order ID:" << orderInfo.orderId << "(in list)";
-        if (!itemQuery.exec()) {
-            qCritical() << "Помилка при виконанні 'GetOrderItemsByOrderId' для order ID '" << orderInfo.orderId << "':";
-            qCritical() << itemQuery.lastError().text();
-            continue;
-        }
-        while (itemQuery.next()) {
-            OrderItemDisplayInfo itemInfo;
-            itemInfo.quantity = itemQuery.value("quantity").toInt();
-            itemInfo.pricePerUnit = itemQuery.value("price_per_unit").toDouble();
-            itemInfo.bookTitle = itemQuery.value("title").toString();
-            orderInfo.items.append(itemInfo);
-        }
-
-        statusQuery.bindValue(":orderId", orderInfo.orderId);
-        qInfo() << "Executing SQL 'GetOrderStatusesByOrderId' for order ID:" << orderInfo.orderId << "(in list)";
-         if (!statusQuery.exec()) {
-            qCritical() << "Помилка при виконанні 'GetOrderStatusesByOrderId' для order ID '" << orderInfo.orderId << "':";
-            qCritical() << statusQuery.lastError().text();
-            continue;
-        }
-        while (statusQuery.next()) {
-            OrderStatusDisplayInfo statusInfo;
-            statusInfo.status = statusQuery.value("status").toString();
-            statusInfo.statusDate = statusQuery.value("status_date").toDateTime();
-            statusInfo.trackingNumber = statusQuery.value("tracking_number").toString();
-            orderInfo.statuses.append(statusInfo);
-        }
-
+        orderIndexById.insert(orderInfo.orderId, orders.size());
         orders.append(orderInfo);
-        orderCount++;
     }
 
-    qInfo() << "Processed" << orderCount << "orders for customer ID:" << customerId;
+    if (orders.isEmpty()) {
+        qInfo() << "No orders found for customer ID:" << customerId;
+        return orders;
+    }
+
+    itemQuery.bindValue(":customerId", customerId);
+    qInfo() << "Executing SQL 'GetOrderItemsByCustomerId' for customer ID:" << customerId;
+    if (!itemQuery.exec()) {
+        qCritical() << "Помилка при виконанні 'GetOrderItemsByCustomerId' для customer ID '" << customerId << "':";
+        qCritical() << itemQuery.lastError().text();
+        return orders;
+    }
+
+    while (itemQuery.next()) {
+        const int orderId = itemQuery.value("order_id").toInt();
+        if (!orderIndexById.contains(orderId)) {
+            continue;
+        }
+
+        OrderItemDisplayInfo itemInfo;
+        itemInfo.quantity = itemQuery.value("quantity").toInt();
+        itemInfo.pricePerUnit = itemQuery.value("price_per_unit").toDouble();
+        itemInfo.bookTitle = itemQuery.value("title").toString();
+        orders[orderIndexById.value(orderId)].items.append(itemInfo);
+    }
+
+    statusQuery.bindValue(":customerId", customerId);
+    qInfo() << "Executing SQL 'GetOrderStatusesByCustomerId' for customer ID:" << customerId;
+    if (!statusQuery.exec()) {
+        qCritical() << "Помилка при виконанні 'GetOrderStatusesByCustomerId' для customer ID '" << customerId << "':";
+        qCritical() << statusQuery.lastError().text();
+        return orders;
+    }
+
+    while (statusQuery.next()) {
+        const int orderId = statusQuery.value("order_id").toInt();
+        if (!orderIndexById.contains(orderId)) {
+            continue;
+        }
+
+        OrderStatusDisplayInfo statusInfo;
+        statusInfo.status = statusQuery.value("status").toString();
+        statusInfo.statusDate = statusQuery.value("status_date").toDateTime();
+        statusInfo.trackingNumber = statusQuery.value("tracking_number").toString();
+
+        OrderDisplayInfo& orderRef = orders[orderIndexById.value(orderId)];
+        orderRef.statuses.append(statusInfo);
+        orderRef.status = statusInfo.status;
+    }
+
+    qInfo() << "Processed" << orders.size() << "orders for customer ID:" << customerId;
     return orders;
 }

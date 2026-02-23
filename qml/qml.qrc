@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>components/BookCard.qml</file>
+        <file>components/BookCardHome.qml</file>
+        <file>components/AuthorCard.qml</file>
+        <file>components/StarRating.qml</file>
+        <file>components/Sidebar.qml</file>
+        <file>components/FilterPanel.qml</file>
+        <file>components/CartBadge.qml</file>
+        <file>components/SearchField.qml</file>
+        <file>components/CommentItem.qml</file>
+        <file>components/LiqPayCheckoutOverlay.qml</file>
+        <file>pages/HomePage.qml</file>
+        <file>pages/BooksPage.qml</file>
+        <file>pages/AuthorsPage.qml</file>
+        <file>pages/CartPage.qml</file>
+        <file>pages/OrdersPage.qml</file>
+        <file>pages/AdminPage.qml</file>
+        <file>pages/ProfilePage.qml</file>
+        <file>pages/BookDetailsPage.qml</file>
+        <file>pages/AuthorDetailsPage.qml</file>
+    </qresource>
+</RCC>

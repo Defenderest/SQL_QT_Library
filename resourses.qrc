@@ -1,19 +1,22 @@
 <RCC>
     <qresource prefix="/icons">
-        <file>icons/home.png</file>
-        <file>icons/book.png</file>
-        <file>icons/users.png</file>
-        <file>icons/shopping-bag.png</file>
-        <file>icons/user.png</file>
-        <file>icons/down-arrow.png</file> <!-- Додано іконку стрілки вниз -->
-        <file>icons/up-arrow.png</file>   <!-- Додано іконку стрілки вгору -->
-        <file>icons/cart.png</file>       <!-- Додано іконку кошика -->
-        <file>icons/filter.png</file>     <!-- Додано іконку фільтра -->
-        <file>icons/add-to-cart.png</file><!-- Додано іконку додавання в кошик -->
-        <file>icons/trash.png</file>      <!-- Додано іконку видалення -->
-        <file>icons/edit.png</file>       <!-- Додано іконку редагування -->
-        <file>icons/save.png</file>       <!-- Додано іконку збереження -->
-        <file>icons/fiction_category.png</file> <!-- Додано іконку категорії -->
+        <file alias="home.png">icons/home.png</file>
+        <file alias="book.png">icons/book.png</file>
+        <file alias="users.png">icons/users.png</file>
+        <file alias="shopping-bag.png">icons/shopping-bag.png</file>
+        <file alias="user.png">icons/user.png</file>
+        <file alias="down-arrow.png">icons/down-arrow.png</file>
+        <file alias="up-arrow.png">icons/up-arrow.png</file>
+        <file alias="cart.png">icons/cart.png</file>
+        <file alias="filter.png">icons/filter.png</file>
+        <file alias="add-to-cart.png">icons/add-to-cart.png</file>
+        <file alias="trash.png">icons/trash.png</file>
+        <file alias="edit.png">icons/edit.png</file>
+        <file alias="save.png">icons/save.png</file>
+        <file alias="fiction_category.png">icons/fiction_category.png</file>
+        <file alias="app_icon.png">icons/app_icon.png</file>
+        <file alias="checkbox_checked.png">icons/checkbox_checked.png</file>
+        <file alias="checkbox_unchecked.png">icons/checkbox_unchecked.png</file>
     </qresource>
     <qresource prefix="/images">
         <!-- Виправлено шляхи до банерів - тепер вони відносні до файлу .qrc -->
@@ -22,6 +25,9 @@
         <file alias="banner2.jpg">images/banner2.jpg</file>
         <file alias="banner3.jpg">images/banner3.jpg</file> <!-- Додано третій банер -->
         <!-- Додайте сюди інші зображення, якщо потрібно -->
+    </qresource>
+    <qresource prefix="/styles">
+        <file>styles/style.qss</file>
     </qresource>
     <!-- <qresource prefix="/new/prefix1"/> - Можна видалити, якщо не використовується -->
 </RCC>

@@ -1,0 +1,141 @@
+/* =====================================================
+   SIDEBAR - GLASSMORPHISM DESIGN
+   ===================================================== */
+
+/* --- Glass Panel --- */
+QFrame#sidebarFrame {
+    background-color: rgba(13, 13, 13, 0.75);
+    border-right: 1px solid rgba(201, 169, 98, 0.2);
+    min-width: 220px;
+    max-width: 220px;
+}
+
+/* Alternative: pure glass without border */
+#sidebarFrame {
+    background-color: rgba(13, 13, 13, 0.85);
+    border: none;
+}
+
+/* --- Logo Style --- */
+QLabel#sidebarLogoLabel {
+    color: #c9a962;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 30px 20px 25px 25px;
+    background: transparent;
+    border: none;
+}
+
+/* --- Separator with gradient --- */
+QFrame#sidebarSeparator {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 transparent,
+        stop:0.5 rgba(201, 169, 98, 0.5),
+        stop:1 transparent);
+    max-height: 1px;
+    margin: 0px 25px 20px 25px;
+    border: none;
+}
+
+/* --- Navigation Buttons - Glass Pill Style --- */
+QPushButton#navHomeButton,
+QPushButton#navBooksButton,
+QPushButton#navAuthorsButton,
+QPushButton#navOrdersButton,
+QPushButton#navProfileButton {
+    color: rgba(255, 255, 255, 0.6);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 6px 15px;
+    min-height: 44px;
+    letter-spacing: 0.5px;
+    icon-size: 20px;
+}
+
+/* Hover - subtle glass effect */
+QPushButton#navHomeButton:hover,
+QPushButton#navBooksButton:hover,
+QPushButton#navAuthorsButton:hover,
+QPushButton#navOrdersButton:hover,
+QPushButton#navProfileButton:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(201, 169, 98, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Active/Checked - Gold Glow */
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: rgba(201, 169, 98, 0.15);
+    border-color: rgba(201, 169, 98, 0.5);
+    color: #c9a962;
+    font-weight: 600;
+}
+
+/* Active with inner glow effect */
+QPushButton#navHomeButton:checked,
+QPushButton#navBooksButton:checked,
+QPushButton#navAuthorsButton:checked,
+QPushButton#navOrdersButton:checked,
+QPushButton#navProfileButton:checked {
+    background-color: rgba(201, 169, 98, 0.2);
+    border: 1px solid rgba(201, 169, 98, 0.6);
+    color: #d4b876;
+}
+
+/* Collapsed state */
+QPushButton#navHomeButton[collapsed="true"],
+QPushButton#navBooksButton[collapsed="true"],
+QPushButton#navAuthorsButton[collapsed="true"],
+QPushButton#navOrdersButton[collapsed="true"],
+QPushButton#navProfileButton[collapsed="true"] {
+    padding: 12px 0;
+    margin: 6px 12px;
+    border-radius: 10px;
+    min-width: 44px;
+    max-width: 44px;
+    text-align: center;
+}
+
+QPushButton#navHomeButton[collapsed="true"]:checked,
+QPushButton#navBooksButton[collapsed="true"]:checked,
+QPushButton#navAuthorsButton[collapsed="true"]:checked,
+QPushButton#navOrdersButton[collapsed="true"]:checked,
+QPushButton#navProfileButton[collapsed="true"]:checked {
+    background-color: rgba(201, 169, 98, 0.25);
+    border-color: rgba(201, 169, 98, 0.8);
+}
+
+/* --- User Profile Section at Bottom --- */
+QWidget#sidebarProfileWidget {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    margin: 15px;
+    padding: 10px;
+}
+
+/* --- Scrollbar for sidebar (if needed) --- */
+QScrollBar:vertical {
+    background: transparent;
+    width: 4px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(201, 169, 98, 0.3);
+    border-radius: 2px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(201, 169, 98, 0.5);
+}
