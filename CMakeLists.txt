@@ -56,6 +56,8 @@ set(PROJECT_SOURCES
     qml_models/adminmodel.h
     qml_models/adminmodel.cpp
     qml_models/theme.cpp
+    qml_models/geminiclient.h
+    qml_models/geminiclient.cpp
     # Dialogs
     dialogs/logindialog.cpp
     dialogs/logindialog.h

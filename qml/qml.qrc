@@ -11,6 +11,7 @@
         <file>components/SearchField.qml</file>
         <file>components/CommentItem.qml</file>
         <file>components/LiqPayCheckoutOverlay.qml</file>
+        <file>components/AiChatWidget.qml</file>
         <file>pages/HomePage.qml</file>
         <file>pages/BooksPage.qml</file>
         <file>pages/AuthorsPage.qml</file>
