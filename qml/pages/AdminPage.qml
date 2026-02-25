@@ -18,6 +18,48 @@ Item {
     property int ordersCount: adminModel && adminModel.orders ? adminModel.orders.length : 0
     property int usersCount: adminModel && adminModel.users ? adminModel.users.length : 0
 
+    property string booksQuery: ""
+    property string commentsQuery: ""
+    property string ordersQuery: ""
+    property string usersQuery: ""
+    property bool lowStockOnly: false
+    property bool usersAdminsOnly: false
+
+    property int lowStockCount: {
+        if (!adminModel || !adminModel.books) {
+            return 0
+        }
+        var c = 0
+        for (var i = 0; i < adminModel.books.length; ++i) {
+            var b = adminModel.books[i]
+            var stock = Number(b.stockQuantity || 0)
+            if (!isNaN(stock) && stock > 0 && stock <= 5) {
+                c++
+            }
+        }
+        return c
+    }
+
+    property var filteredBooks: booksViewModel()
+    property var filteredComments: commentsViewModel()
+    property var filteredOrders: ordersViewModel()
+    property var filteredUsers: usersViewModel()
+
+    property int pendingOrdersCount: {
+        if (!adminModel || !adminModel.orders) {
+            return 0
+        }
+        var c = 0
+        for (var i = 0; i < adminModel.orders.length; ++i) {
+            var o = adminModel.orders[i]
+            var s = String(o.lastStatus || "").toLowerCase()
+            if (s.indexOf("new") !== -1 || s.indexOf("pending") !== -1 || s.indexOf("processing") !== -1 || s.indexOf("очіку") !== -1) {
+                c++
+            }
+        }
+        return c
+    }
+
     readonly property var tabConfig: [
         { title: "Книги", subtitle: "Каталог і ціни" },
         { title: "Коментарі", subtitle: "Модерація" },
@@ -34,6 +76,135 @@ Item {
         toastMessage = message
         toastColor = color
         toastTimer.restart()
+    }
+
+    function textValue(v) {
+        return String(v === undefined || v === null ? "" : v).toLowerCase()
+    }
+
+    function booksViewModel() {
+        var data = adminModel && adminModel.books ? adminModel.books : []
+        var q = booksQuery.trim().toLowerCase()
+        var filtered = []
+        for (var i = 0; i < data.length; ++i) {
+            var b = data[i]
+            var stock = Number(b.stockQuantity || 0)
+            if (lowStockOnly && (isNaN(stock) || stock <= 0 || stock > 5)) {
+                continue
+            }
+
+            if (q.length === 0) {
+                filtered.push(b)
+                continue
+            }
+
+            var hay = textValue(b.title) + " " + textValue(b.genre) + " " + textValue(b.language) + " " + textValue(b.bookId)
+            if (hay.indexOf(q) !== -1) {
+                filtered.push(b)
+            }
+        }
+        return filtered
+    }
+
+    function commentsViewModel() {
+        var data = adminModel && adminModel.comments ? adminModel.comments : []
+        var q = commentsQuery.trim().toLowerCase()
+        if (q.length === 0) {
+            return data
+        }
+        var filtered = []
+        for (var i = 0; i < data.length; ++i) {
+            var c = data[i]
+            var hay = textValue(c.commentId) + " " + textValue(c.bookTitle) + " " + textValue(c.authorName) + " " + textValue(c.commentText)
+            if (hay.indexOf(q) !== -1) {
+                filtered.push(c)
+            }
+        }
+        return filtered
+    }
+
+    function ordersViewModel() {
+        var data = adminModel && adminModel.orders ? adminModel.orders : []
+        var q = ordersQuery.trim().toLowerCase()
+        if (q.length === 0) {
+            return data
+        }
+        var filtered = []
+        for (var i = 0; i < data.length; ++i) {
+            var o = data[i]
+            var hay = textValue(o.orderId) + " " + textValue(o.customerName) + " " + textValue(o.shippingAddress) + " " + textValue(o.lastStatus)
+            if (hay.indexOf(q) !== -1) {
+                filtered.push(o)
+            }
+        }
+        return filtered
+    }
+
+    function usersViewModel() {
+        var data = adminModel && adminModel.users ? adminModel.users : []
+        var q = usersQuery.trim().toLowerCase()
+        var filtered = []
+        for (var i = 0; i < data.length; ++i) {
+            var u = data[i]
+            if (usersAdminsOnly && !u.isAdmin) {
+                continue
+            }
+
+            if (q.length === 0) {
+                filtered.push(u)
+                continue
+            }
+
+            var hay = textValue(u.customerId) + " " + textValue(u.fullName) + " " + textValue(u.email)
+            if (hay.indexOf(q) !== -1) {
+                filtered.push(u)
+            }
+        }
+        return filtered
+    }
+
+    function orderStatusTheme(statusText) {
+        var status = textValue(statusText)
+        if (status.indexOf("delivered") !== -1 || status.indexOf("вруч") !== -1 || status.indexOf("достав") !== -1) {
+            return {
+                bg: Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.16),
+                border: Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.45),
+                text: Theme.success
+            }
+        }
+        if (status.indexOf("cancel") !== -1 || status.indexOf("скас") !== -1 || status.indexOf("reject") !== -1) {
+            return {
+                bg: Qt.rgba(244 / 255, 67 / 255, 54 / 255, 0.16),
+                border: Qt.rgba(244 / 255, 67 / 255, 54 / 255, 0.45),
+                text: Theme.error
+            }
+        }
+        if (status.indexOf("pending") !== -1 || status.indexOf("new") !== -1 || status.indexOf("очіку") !== -1 || status.indexOf("processing") !== -1) {
+            return {
+                bg: Qt.rgba(255 / 255, 152 / 255, 0 / 255, 0.16),
+                border: Qt.rgba(255 / 255, 152 / 255, 0 / 255, 0.45),
+                text: Theme.warning
+            }
+        }
+
+        return {
+            bg: Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.15),
+            border: Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.45),
+            text: Theme.info
+        }
+    }
+
+    function currentTabHint() {
+        if (currentTab === 0) {
+            return "Оновлюйте ціни та залишки, щоб каталог завжди був актуальний."
+        }
+        if (currentTab === 1) {
+            return "Переглядайте нові відгуки та видаляйте некоректні коментарі."
+        }
+        if (currentTab === 2) {
+            return "Додавайте статуси, щоб клієнт бачив прогрес свого замовлення."
+        }
+        return "Керуйте ролями адміністраторів та контролюйте доступ до панелі."
     }
 
     function loadDataIfAllowed() {
@@ -85,6 +256,38 @@ Item {
         }
     }
 
+    component AdminSearchField: TextField {
+        color: Theme.textPrimary
+        placeholderTextColor: Theme.textMuted
+        font.family: Theme.fontBody.family
+        font.pixelSize: 13
+        leftPadding: 38
+        rightPadding: 12
+        topPadding: 10
+        bottomPadding: 10
+
+        background: Rectangle {
+            radius: Theme.radiusRound
+            color: Qt.rgba(1, 1, 1, 0.018)
+            border.width: 1
+            border.color: parent.activeFocus ? Theme.borderHover : Theme.borderLight
+
+            Behavior on border.color {
+                ColorAnimation { duration: Theme.animationFast }
+            }
+
+            Label {
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                text: "⌕"
+                color: Theme.textMuted
+                font.family: Theme.fontBody.family
+                font.pixelSize: 14
+            }
+        }
+    }
+
     component ActionButton: Rectangle {
         id: buttonRoot
 
@@ -93,13 +296,14 @@ Item {
         property color hoverColor: Qt.rgba(1, 1, 1, 0.08)
         property color borderColor: Theme.borderLight
         property color textColor: Theme.textPrimary
-        property int buttonHeight: 36
-        property int sidePadding: 16
+        property int buttonHeight: 34
+        property int sidePadding: 14
+        property int cornerRadius: Theme.radiusRound
         signal clicked()
 
         implicitWidth: Math.max(120, label.implicitWidth + sidePadding * 2)
         implicitHeight: buttonHeight
-        radius: Theme.radiusPill
+        radius: buttonRoot.cornerRadius
         border.width: 1
         border.color: buttonRoot.borderColor
         color: area.containsMouse ? hoverColor : normalColor
@@ -229,19 +433,25 @@ Item {
 
                             Repeater {
                                 model: [
-                                    { label: "Книги", value: root.booksCount },
-                                    { label: "Коментарі", value: root.commentsCount },
-                                    { label: "Замовлення", value: root.ordersCount },
-                                    { label: "Користувачі", value: root.usersCount }
+                                    { label: "Книги", value: root.booksCount, tab: 0, hint: root.lowStockCount > 0 ? ("Мало залишку: " + root.lowStockCount) : "" },
+                                    { label: "Коментарі", value: root.commentsCount, tab: 1, hint: "" },
+                                    { label: "Замовлення", value: root.ordersCount, tab: 2, hint: root.pendingOrdersCount > 0 ? ("Очікують: " + root.pendingOrdersCount) : "" },
+                                    { label: "Користувачі", value: root.usersCount, tab: 3, hint: "" }
                                 ]
 
                                 Rectangle {
                                     Layout.preferredWidth: root.compactLayout ? 72 : 96
                                     Layout.preferredHeight: 60
                                     radius: Theme.radiusSoft
-                                    color: Qt.rgba(1, 1, 1, 0.035)
+                                    color: root.currentTab === modelData.tab
+                                           ? Qt.rgba(1, 1, 1, 0.11)
+                                           : (metricHover.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(1, 1, 1, 0.035))
                                     border.width: 1
-                                    border.color: Theme.borderLight
+                                    border.color: root.currentTab === modelData.tab ? Theme.borderHover : Theme.borderLight
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: Theme.animationFast }
+                                    }
 
                                     Column {
                                         anchors.centerIn: parent
@@ -263,6 +473,29 @@ Item {
                                             font.pixelSize: 10
                                         }
                                     }
+
+                                    Rectangle {
+                                        visible: modelData.hint.length > 0
+                                        anchors.top: parent.top
+                                        anchors.right: parent.right
+                                        anchors.topMargin: -6
+                                        anchors.rightMargin: -6
+                                        radius: 7
+                                        color: Theme.warning
+                                        width: 14
+                                        height: 14
+                                    }
+
+                                    MouseArea {
+                                        id: metricHover
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.currentTab = modelData.tab
+                                    }
+
+                                    ToolTip.visible: metricHover.containsMouse && modelData.hint.length > 0
+                                    ToolTip.text: modelData.hint
                                 }
                             }
                         }
@@ -339,6 +572,27 @@ Item {
                                 }
                             }
                         }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 42
+                    radius: Theme.radiusSoft
+                    color: Qt.rgba(1, 1, 1, 0.012)
+                    border.width: 1
+                    border.color: Theme.borderLight
+
+                    Label {
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.spacingM
+                        anchors.rightMargin: Theme.spacingM
+                        verticalAlignment: Text.AlignVCenter
+                        text: root.currentTabHint()
+                        color: Theme.textSecondary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
                     }
                 }
 
@@ -457,7 +711,8 @@ Item {
                         }
 
                         ActionButton {
-                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignLeft
+                            Layout.preferredWidth: 186
                             text: "Додати книгу"
                             normalColor: Theme.accentWhite
                             hoverColor: Qt.rgba(1, 1, 1, 0.84)
@@ -513,12 +768,35 @@ Item {
                         }
 
                         Label {
-                            text: root.booksCount + " позицій"
+                            text: root.filteredBooks.length + " із " + root.booksCount
                             color: Theme.textMuted
                             font.family: Theme.fontCaption.family
                             font.pixelSize: 10
                             font.capitalization: Font.AllUppercase
                             font.letterSpacing: 1
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingS
+
+                        AdminSearchField {
+                            Layout.fillWidth: true
+                            placeholderText: "Пошук за назвою, жанром або ID"
+                            text: root.booksQuery
+                            onTextChanged: root.booksQuery = text
+                        }
+
+                        ActionButton {
+                            text: root.lowStockOnly ? "Усі залишки" : "Малий залишок"
+                            implicitWidth: 146
+                            borderColor: root.lowStockOnly ? Theme.warning : Theme.borderLight
+                            textColor: root.lowStockOnly ? Theme.warning : Theme.textPrimary
+                            hoverColor: root.lowStockOnly
+                                       ? Qt.rgba(255 / 255, 152 / 255, 0 / 255, 0.16)
+                                       : Qt.rgba(1, 1, 1, 0.08)
+                            onClicked: root.lowStockOnly = !root.lowStockOnly
                         }
                     }
 
@@ -570,8 +848,10 @@ Item {
 
                     Label {
                         Layout.fillWidth: true
-                        visible: root.booksCount === 0
-                        text: "Поки що немає книг для керування."
+                        visible: root.filteredBooks.length === 0
+                        text: root.booksCount === 0
+                              ? "Поки що немає книг для керування."
+                              : "Нічого не знайдено за поточним фільтром."
                         color: Theme.textSecondary
                         font.family: Theme.fontBody.family
                         font.pixelSize: 14
@@ -579,19 +859,22 @@ Item {
                     }
 
                     ScrollView {
+                        id: booksScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        contentWidth: availableWidth
 
                         Column {
-                            width: parent.width
+                            width: booksScroll.availableWidth
                             spacing: 8
 
                             Repeater {
-                                model: adminModel.books
+                                model: root.filteredBooks.length
 
                                 Rectangle {
+                                    property var row: root.filteredBooks[index]
                                     width: parent.width
                                     height: 74
                                     radius: Theme.radiusSoft
@@ -610,7 +893,7 @@ Item {
 
                                         Label {
                                             Layout.preferredWidth: 74
-                                            text: "#" + (modelData.bookId || "")
+                                            text: "#" + (row.bookId || "")
                                             color: Theme.textSecondary
                                             font.pixelSize: 13
                                         }
@@ -621,7 +904,7 @@ Item {
 
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: modelData.title || ""
+                                                text: row.title || ""
                                                 color: Theme.textPrimary
                                                 font.pixelSize: 14
                                                 elide: Text.ElideRight
@@ -629,8 +912,10 @@ Item {
 
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: (modelData.genre || "Без жанру") + " • " + (modelData.language || "-")
-                                                color: Theme.textMuted
+                                                text: (row.genre || "Без жанру")
+                                                      + " • " + (row.language || "-")
+                                                      + " • Залишок: " + (row.stockQuantity !== undefined ? row.stockQuantity : "-")
+                                                color: Number(row.stockQuantity || 0) <= 5 ? Theme.warning : Theme.textMuted
                                                 font.pixelSize: 11
                                                 elide: Text.ElideRight
                                             }
@@ -639,14 +924,14 @@ Item {
                                         AdminField {
                                             id: priceField
                                             Layout.preferredWidth: 130
-                                            text: modelData.price !== undefined ? Number(modelData.price).toFixed(2) : ""
+                                            text: row.price !== undefined ? Number(row.price).toFixed(2) : ""
                                             validator: DoubleValidator { bottom: 0; decimals: 2 }
                                         }
 
                                         ActionButton {
                                             text: "Ціна"
                                             implicitWidth: 96
-                                            onClicked: adminModel.updateBookPrice(modelData.bookId, root.parseNumber(priceField.text, -1))
+                                            onClicked: adminModel.updateBookPrice(row.bookId, root.parseNumber(priceField.text, -1))
                                         }
 
                                         ActionButton {
@@ -655,7 +940,7 @@ Item {
                                             borderColor: Theme.error
                                             textColor: Theme.error
                                             hoverColor: Qt.rgba(244 / 255, 67 / 255, 54 / 255, 0.14)
-                                            onClicked: adminModel.deleteBook(modelData.bookId)
+                                            onClicked: adminModel.deleteBook(row.bookId)
                                         }
                                     }
 
@@ -700,13 +985,20 @@ Item {
                     }
 
                     Label {
-                        text: root.commentsCount + " записів"
+                        text: root.filteredComments.length + " із " + root.commentsCount
                         color: Theme.textMuted
                         font.family: Theme.fontCaption.family
                         font.pixelSize: 10
                         font.capitalization: Font.AllUppercase
                         font.letterSpacing: 1
                     }
+                }
+
+                AdminSearchField {
+                    Layout.fillWidth: true
+                    placeholderText: "Пошук за книгою, автором або текстом коментаря"
+                    text: root.commentsQuery
+                    onTextChanged: root.commentsQuery = text
                 }
 
                 Rectangle {
@@ -717,8 +1009,10 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    visible: root.commentsCount === 0
-                    text: "Коментарів для модерації не знайдено."
+                    visible: root.filteredComments.length === 0
+                    text: root.commentsCount === 0
+                          ? "Коментарів для модерації не знайдено."
+                          : "Немає коментарів за поточним фільтром."
                     color: Theme.textSecondary
                     font.family: Theme.fontBody.family
                     font.pixelSize: 14
@@ -726,17 +1020,19 @@ Item {
                 }
 
                 ScrollView {
+                    id: commentsScroll
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    contentWidth: availableWidth
 
                     Column {
-                        width: parent.width
+                        width: commentsScroll.availableWidth
                         spacing: 8
 
                         Repeater {
-                            model: adminModel.comments
+                            model: root.filteredComments
 
                             Rectangle {
                                 width: parent.width
@@ -744,71 +1040,101 @@ Item {
                                 color: commentHover.containsMouse ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.015)
                                 border.width: 1
                                 border.color: Theme.borderLight
-                                implicitHeight: commentCol.implicitHeight + 16
+                                implicitHeight: Math.max(96, Math.max(commentMainCol.implicitHeight, commentActionCol.implicitHeight) + Theme.spacingM * 2)
 
                                 Behavior on color {
                                     ColorAnimation { duration: Theme.animationFast }
                                 }
 
-                                ColumnLayout {
-                                    id: commentCol
+                                RowLayout {
+                                    id: commentRow
                                     anchors.fill: parent
-                                    anchors.margins: Theme.spacingS
-                                    spacing: 5
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingM
 
-                                    RowLayout {
+                                    ColumnLayout {
+                                        id: commentMainCol
                                         Layout.fillWidth: true
+                                        spacing: 6
 
                                         Label {
                                             Layout.fillWidth: true
                                             text: "#" + (modelData.commentId || "") + "  •  " + (modelData.bookTitle || "Книга")
                                             color: Theme.textPrimary
-                                            font.pixelSize: 13
+                                            font.family: Theme.fontBody.family
+                                            font.pixelSize: 14
                                             elide: Text.ElideRight
                                         }
 
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: (modelData.authorName || "") + "  •  " + (modelData.commentDate || "")
+                                            color: Theme.textMuted
+                                            font.family: Theme.fontCaption.family
+                                            font.pixelSize: 10
+                                        }
+
                                         Rectangle {
-                                            Layout.preferredWidth: 34
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 1
+                                            color: Theme.borderLight
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: modelData.commentText || ""
+                                            color: Theme.textPrimary
+                                            font.family: Theme.fontBody.family
+                                            font.pixelSize: 13
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        id: commentActionCol
+                                        property int actionWidth: root.compactLayout ? 88 : 104
+                                        Layout.preferredWidth: actionWidth
+                                        Layout.minimumWidth: actionWidth
+                                        Layout.maximumWidth: actionWidth
+                                        Layout.alignment: Qt.AlignTop
+                                        spacing: 6
+
+                                        Rectangle {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            Layout.preferredWidth: commentActionCol.actionWidth
                                             Layout.preferredHeight: 24
                                             radius: 12
-                                            color: Qt.rgba(255 / 255, 255 / 255, 255 / 255, 0.07)
                                             border.width: 1
                                             border.color: Theme.borderLight
+                                            color: {
+                                                var r = Number(modelData.rating || 0)
+                                                if (r >= 4) return Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.18)
+                                                if (r >= 3) return Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.15)
+                                                if (r >= 1) return Qt.rgba(255 / 255, 152 / 255, 0 / 255, 0.16)
+                                                return Qt.rgba(1, 1, 1, 0.07)
+                                            }
 
                                             Label {
                                                 anchors.centerIn: parent
-                                                text: modelData.rating !== undefined ? modelData.rating : "-"
+                                                text: "★ " + (modelData.rating !== undefined ? modelData.rating : "-")
                                                 color: Theme.textPrimary
-                                                font.pixelSize: 11
+                                                font.family: Theme.fontCaption.family
+                                                font.pixelSize: 10
                                             }
                                         }
 
                                         ActionButton {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            implicitWidth: commentActionCol.actionWidth
                                             text: "Очистити"
-                                            implicitWidth: 116
-                                            buttonHeight: 30
+                                            buttonHeight: 28
+                                            sidePadding: 10
+                                            cornerRadius: 12
                                             borderColor: Theme.error
                                             textColor: Theme.error
                                             hoverColor: Qt.rgba(244 / 255, 67 / 255, 54 / 255, 0.14)
                                             onClicked: adminModel.deleteComment(modelData.commentId)
                                         }
-                                    }
-
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: (modelData.authorName || "") + "  •  " + (modelData.commentDate || "")
-                                        color: Theme.textMuted
-                                        font.family: Theme.fontCaption.family
-                                        font.pixelSize: 10
-                                    }
-
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: modelData.commentText || ""
-                                        color: Theme.textPrimary
-                                        font.family: Theme.fontBody.family
-                                        font.pixelSize: 13
-                                        wrapMode: Text.WordWrap
                                     }
                                 }
 
@@ -924,12 +1250,19 @@ Item {
                         }
 
                         Label {
-                            text: root.ordersCount + " у списку"
+                            text: root.filteredOrders.length + " із " + root.ordersCount
                             color: Theme.textMuted
                             font.family: Theme.fontCaption.family
                             font.pixelSize: 10
                             font.capitalization: Font.AllUppercase
                         }
+                    }
+
+                    AdminSearchField {
+                        Layout.fillWidth: true
+                        placeholderText: "Пошук за ID, клієнтом, адресою або статусом"
+                        text: root.ordersQuery
+                        onTextChanged: root.ordersQuery = text
                     }
 
                     Rectangle {
@@ -940,8 +1273,10 @@ Item {
 
                     Label {
                         Layout.fillWidth: true
-                        visible: root.ordersCount === 0
-                        text: "Немає замовлень для відображення."
+                        visible: root.filteredOrders.length === 0
+                        text: root.ordersCount === 0
+                              ? "Немає замовлень для відображення."
+                              : "Немає замовлень за поточним фільтром."
                         color: Theme.textSecondary
                         font.family: Theme.fontBody.family
                         font.pixelSize: 14
@@ -949,22 +1284,24 @@ Item {
                     }
 
                     ScrollView {
+                        id: ordersScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                        contentWidth: availableWidth
 
                         Column {
-                            width: parent.width
+                            width: ordersScroll.availableWidth
                             spacing: 8
 
                             Repeater {
-                                model: adminModel.orders
+                                model: root.filteredOrders
 
                                 Rectangle {
                                     width: parent.width
                                     radius: Theme.radiusSoft
-                                    height: 82
+                                    implicitHeight: Math.max(88, Math.max(orderMainCol.implicitHeight, orderMetaCol.implicitHeight) + Theme.spacingM * 2)
                                     color: orderHover.containsMouse ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.015)
                                     border.width: 1
                                     border.color: Theme.borderLight
@@ -974,25 +1311,21 @@ Item {
                                     }
 
                                     RowLayout {
+                                        id: orderRow
                                         anchors.fill: parent
-                                        anchors.margins: Theme.spacingS
-                                        spacing: Theme.spacingM
-
-                                        Label {
-                                            Layout.preferredWidth: 78
-                                            text: "#" + (modelData.orderId || "")
-                                            color: Theme.textPrimary
-                                            font.pixelSize: 13
-                                        }
+                                        anchors.margins: Theme.spacingM
+                                        spacing: Theme.spacingS
 
                                         ColumnLayout {
+                                            id: orderMainCol
                                             Layout.fillWidth: true
-                                            spacing: 1
+                                            spacing: 5
 
                                             Label {
                                                 Layout.fillWidth: true
-                                                text: modelData.customerName || ""
+                                                text: "#" + (modelData.orderId || "") + "  •  " + (modelData.customerName || "")
                                                 color: Theme.textPrimary
+                                                font.family: Theme.fontBody.family
                                                 font.pixelSize: 13
                                                 elide: Text.ElideRight
                                             }
@@ -1004,33 +1337,72 @@ Item {
                                                 font.pixelSize: 11
                                                 elide: Text.ElideRight
                                             }
-                                        }
 
-                                        Label {
-                                            Layout.preferredWidth: 130
-                                            text: Number(modelData.totalAmount || 0).toFixed(2) + " UAH"
-                                            color: Theme.textPrimary
-                                            font.pixelSize: 13
-                                        }
-
-                                        Rectangle {
-                                            Layout.preferredWidth: root.compactLayout ? 148 : 190
-                                            Layout.preferredHeight: 32
-                                            radius: Theme.radiusPill
-                                            color: Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.15)
-                                            border.width: 1
-                                            border.color: Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.45)
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: 1
+                                                color: Theme.borderLight
+                                            }
 
                                             Label {
-                                                anchors.centerIn: parent
-                                                width: parent.width - 18
+                                                Layout.fillWidth: true
                                                 text: modelData.lastStatus || "-"
-                                                color: Theme.info
+                                                color: Theme.textMuted
                                                 font.family: Theme.fontCaption.family
-                                                font.pixelSize: 10
+                                                font.pixelSize: 9
                                                 font.capitalization: Font.AllUppercase
                                                 elide: Text.ElideRight
-                                                horizontalAlignment: Text.AlignHCenter
+                                            }
+                                        }
+
+                                        ColumnLayout {
+                                            id: orderMetaCol
+                                            property int metaWidth: root.compactLayout ? 102 : 116
+                                            Layout.preferredWidth: metaWidth
+                                            Layout.minimumWidth: metaWidth
+                                            Layout.maximumWidth: metaWidth
+                                            Layout.alignment: Qt.AlignTop
+                                            spacing: 6
+
+                                            Rectangle {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                Layout.preferredWidth: orderMetaCol.metaWidth
+                                                Layout.preferredHeight: 24
+                                                radius: 12
+                                                color: Qt.rgba(1, 1, 1, 0.07)
+                                                border.width: 1
+                                                border.color: Theme.borderLight
+
+                                                Label {
+                                                    anchors.centerIn: parent
+                                                    text: Number(modelData.totalAmount || 0).toFixed(2) + " UAH"
+                                                    color: Theme.textPrimary
+                                                    font.family: Theme.fontCaption.family
+                                                    font.pixelSize: 9
+                                                    font.capitalization: Font.AllUppercase
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                Layout.preferredWidth: orderMetaCol.metaWidth
+                                                Layout.preferredHeight: 28
+                                                radius: 14
+                                                color: root.orderStatusTheme(modelData.lastStatus).bg
+                                                border.width: 1
+                                                border.color: root.orderStatusTheme(modelData.lastStatus).border
+
+                                                Label {
+                                                    anchors.centerIn: parent
+                                                    width: parent.width - 12
+                                                    text: modelData.lastStatus || "-"
+                                                    color: root.orderStatusTheme(modelData.lastStatus).text
+                                                    font.family: Theme.fontCaption.family
+                                                    font.pixelSize: 9
+                                                    font.capitalization: Font.AllUppercase
+                                                    elide: Text.ElideRight
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                }
                                             }
                                         }
                                     }
@@ -1076,12 +1448,35 @@ Item {
                     }
 
                     Label {
-                        text: root.usersCount + " акаунтів"
+                        text: root.filteredUsers.length + " із " + root.usersCount
                         visible: !root.compactLayout
                         color: Theme.textMuted
                         font.family: Theme.fontCaption.family
                         font.pixelSize: 10
                         font.capitalization: Font.AllUppercase
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingS
+
+                    AdminSearchField {
+                        Layout.fillWidth: true
+                        placeholderText: "Пошук за ім'ям, email або ID"
+                        text: root.usersQuery
+                        onTextChanged: root.usersQuery = text
+                    }
+
+                    ActionButton {
+                        text: root.usersAdminsOnly ? "Усі ролі" : "Лише адміни"
+                        implicitWidth: 130
+                        borderColor: root.usersAdminsOnly ? Theme.info : Theme.borderLight
+                        textColor: root.usersAdminsOnly ? Theme.info : Theme.textPrimary
+                        hoverColor: root.usersAdminsOnly
+                                   ? Qt.rgba(33 / 255, 150 / 255, 243 / 255, 0.16)
+                                   : Qt.rgba(1, 1, 1, 0.08)
+                        onClicked: root.usersAdminsOnly = !root.usersAdminsOnly
                     }
                 }
 
@@ -1093,8 +1488,10 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    visible: root.usersCount === 0
-                    text: "Список користувачів порожній."
+                    visible: root.filteredUsers.length === 0
+                    text: root.usersCount === 0
+                          ? "Список користувачів порожній."
+                          : "Немає користувачів за поточним фільтром."
                     color: Theme.textSecondary
                     font.family: Theme.fontBody.family
                     font.pixelSize: 14
@@ -1102,22 +1499,24 @@ Item {
                 }
 
                 ScrollView {
+                    id: usersScroll
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    contentWidth: availableWidth
 
                     Column {
-                        width: parent.width
+                        width: usersScroll.availableWidth
                         spacing: 8
 
                         Repeater {
-                            model: adminModel.users
+                            model: root.filteredUsers
 
                             Rectangle {
                                 width: parent.width
                                 radius: Theme.radiusSoft
-                                height: root.compactLayout ? 82 : 74
+                                implicitHeight: Math.max(88, Math.max(userMainCol.implicitHeight, userMetaCol.implicitHeight) + Theme.spacingM * 2)
                                 color: userHover.containsMouse ? Qt.rgba(1, 1, 1, 0.03) : Qt.rgba(1, 1, 1, 0.015)
                                 border.width: 1
                                 border.color: Theme.borderLight
@@ -1127,26 +1526,22 @@ Item {
                                 }
 
                                 RowLayout {
+                                    id: userRow
                                     anchors.fill: parent
-                                    anchors.margins: Theme.spacingS
-                                    spacing: root.compactLayout ? Theme.spacingS : Theme.spacingM
-
-                                    Label {
-                                        Layout.preferredWidth: root.compactLayout ? 56 : 72
-                                        text: "#" + (modelData.customerId || "")
-                                        color: Theme.textSecondary
-                                        font.pixelSize: 13
-                                    }
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingS
 
                                     ColumnLayout {
+                                        id: userMainCol
                                         Layout.fillWidth: true
-                                        spacing: 2
+                                        spacing: 5
 
                                         Label {
                                             Layout.fillWidth: true
-                                            text: modelData.fullName || ""
+                                            text: "#" + (modelData.customerId || "") + "  •  " + (modelData.fullName || "")
                                             color: Theme.textPrimary
-                                            font.pixelSize: 14
+                                            font.family: Theme.fontBody.family
+                                            font.pixelSize: 13
                                             elide: Text.ElideRight
                                         }
 
@@ -1157,72 +1552,109 @@ Item {
                                             font.pixelSize: 11
                                             elide: Text.ElideRight
                                         }
+
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 1
+                                            color: Theme.borderLight
+                                        }
+
+                                        Label {
+                                            Layout.fillWidth: true
+                                            text: (modelData.isAdmin ? "Роль: Адміністратор" : "Роль: Користувач")
+                                            color: modelData.isAdmin ? Theme.info : Theme.textMuted
+                                            font.family: Theme.fontCaption.family
+                                            font.pixelSize: 9
+                                            font.capitalization: Font.AllUppercase
+                                            elide: Text.ElideRight
+                                        }
                                     }
 
-                                    Label {
-                                        visible: !root.compactLayout
-                                        Layout.preferredWidth: 84
-                                        text: (modelData.loyaltyPoints || 0) + " LP"
-                                        color: Theme.textMuted
-                                        font.family: Theme.fontCaption.family
-                                        font.pixelSize: 10
-                                        horizontalAlignment: Text.AlignHCenter
-                                    }
+                                    ColumnLayout {
+                                        id: userMetaCol
+                                        property int metaWidth: root.compactLayout ? 96 : 110
+                                        Layout.preferredWidth: metaWidth
+                                        Layout.minimumWidth: metaWidth
+                                        Layout.maximumWidth: metaWidth
+                                        Layout.alignment: Qt.AlignTop
+                                        spacing: 6
 
-                                    Rectangle {
-                                        Layout.preferredWidth: root.compactLayout ? 56 : 118
-                                        Layout.preferredHeight: 34
-                                        radius: 17
-                                        color: Qt.rgba(1, 1, 1, 0.02)
-                                        border.width: 1
-                                        border.color: Theme.borderLight
-
-                                        RowLayout {
-                                            anchors.fill: parent
-                                            anchors.leftMargin: 8
-                                            anchors.rightMargin: 8
-                                            spacing: 6
+                                        Rectangle {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            Layout.preferredWidth: userMetaCol.metaWidth
+                                            Layout.preferredHeight: 24
+                                            radius: 12
+                                            color: Qt.rgba(1, 1, 1, 0.07)
+                                            border.width: 1
+                                            border.color: Theme.borderLight
 
                                             Label {
-                                                visible: !root.compactLayout
-                                                text: "Адмін"
-                                                color: Theme.textSecondary
-                                                font.pixelSize: 12
+                                                anchors.centerIn: parent
+                                                text: (modelData.loyaltyPoints || 0) + " LP"
+                                                color: Theme.textPrimary
+                                                font.family: Theme.fontCaption.family
+                                                font.pixelSize: 9
+                                                font.capitalization: Font.AllUppercase
                                             }
+                                        }
 
-                                            Switch {
-                                                id: adminSwitch
-                                                checked: modelData.isAdmin || false
-                                                onToggled: adminModel.setUserAdminRole(modelData.customerId, checked)
+                                        Rectangle {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            Layout.preferredWidth: userMetaCol.metaWidth
+                                            Layout.preferredHeight: 30
+                                            radius: 15
+                                            color: Qt.rgba(1, 1, 1, 0.02)
+                                            border.width: 1
+                                            border.color: Theme.borderLight
 
-                                                padding: 0
-                                                implicitWidth: 44
-                                                implicitHeight: 24
-                                                Layout.alignment: Qt.AlignVCenter
+                                            RowLayout {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 8
+                                                anchors.rightMargin: 8
+                                                spacing: 4
 
-                                                indicator: Rectangle {
-                                                    implicitWidth: 44
-                                                    implicitHeight: 24
-                                                    radius: 12
-                                                    color: adminSwitch.checked ? Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.35) : Qt.rgba(1, 1, 1, 0.1)
-                                                    border.width: 1
-                                                    border.color: adminSwitch.checked ? Theme.success : Theme.borderLight
-
-                                                    Rectangle {
-                                                        width: 18
-                                                        height: 18
-                                                        radius: 9
-                                                        y: 3
-                                                        x: adminSwitch.checked ? parent.width - width - 3 : 3
-                                                        color: Theme.accentWhite
-
-                                                        Behavior on x {
-                                                            NumberAnimation { duration: Theme.animationFast }
-                                                        }
-                                                    }
+                                                Label {
+                                                    text: root.compactLayout ? "A" : "Адмін"
+                                                    color: Theme.textSecondary
+                                                    font.family: Theme.fontCaption.family
+                                                    font.pixelSize: 9
+                                                    font.capitalization: Font.AllUppercase
                                                 }
 
-                                                contentItem: Item {}
+                                                Switch {
+                                                    id: adminSwitch
+                                                    checked: modelData.isAdmin || false
+                                                    onToggled: adminModel.setUserAdminRole(modelData.customerId, checked)
+
+                                                    padding: 0
+                                                    implicitWidth: 40
+                                                    implicitHeight: 22
+                                                    Layout.alignment: Qt.AlignVCenter
+
+                                                    indicator: Rectangle {
+                                                        implicitWidth: 40
+                                                        implicitHeight: 22
+                                                        radius: 11
+                                                        color: adminSwitch.checked ? Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.35) : Qt.rgba(1, 1, 1, 0.1)
+                                                        border.width: 1
+                                                        border.color: adminSwitch.checked ? Theme.success : Theme.borderLight
+
+                                                        Rectangle {
+                                                            width: 16
+                                                            height: 16
+                                                            radius: 8
+                                                            y: 3
+                                                            x: adminSwitch.checked ? parent.width - width - 3 : 3
+                                                            color: Theme.accentWhite
+
+                                                            Behavior on x {
+                                                                NumberAnimation { duration: Theme.animationFast }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    contentItem: Item {}
+                                                }
                                             }
                                         }
                                     }

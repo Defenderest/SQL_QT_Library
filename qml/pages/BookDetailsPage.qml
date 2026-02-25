@@ -242,7 +242,15 @@ ScrollView {
                                 hoverEnabled: true
                                 enabled: bookDetailsModel.stockQuantity > 0
                                 cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                onClicked: cartModel.addItem(root.bookId)
+                                onClicked: {
+                                    if (!(appContext && appContext.loggedIn)) {
+                                        root.feedbackError = true
+                                        root.feedbackMessage = "Щоб додати книгу в кошик, увійдіть у профіль"
+                                        appContext.navigateTo("profile")
+                                        return
+                                    }
+                                    cartModel.addItem(root.bookId)
+                                }
                             }
                         }
 
@@ -390,6 +398,39 @@ ScrollView {
                         wrapMode: Text.Wrap
                     }
                 }
+
+                Rectangle {
+                    visible: !(appContext && appContext.loggedIn)
+                    Layout.topMargin: 6
+                    Layout.preferredWidth: 260
+                    Layout.preferredHeight: 46
+                    color: loginForCommentArea.containsMouse ? Theme.accentWhite : "transparent"
+                    border.color: Theme.accentWhite
+                    border.width: 1
+                    radius: Theme.radiusSharp
+
+                    Behavior on color {
+                        ColorAnimation { duration: Theme.animationFast }
+                    }
+
+                    Label {
+                        anchors.centerIn: parent
+                        text: "Увійти, щоб залишити відгук"
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 12
+                        font.capitalization: Font.AllUppercase
+                        font.letterSpacing: 1
+                        color: loginForCommentArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                    }
+
+                    MouseArea {
+                        id: loginForCommentArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: appContext.navigateTo("profile")
+                    }
+                }
             }
 
             ColumnLayout {
@@ -462,6 +503,12 @@ ScrollView {
                             }
 
                             onAddToCart: function(id) {
+                                if (!(appContext && appContext.loggedIn)) {
+                                    root.feedbackError = true
+                                    root.feedbackMessage = "Щоб додати книгу в кошик, увійдіть у профіль"
+                                    appContext.navigateTo("profile")
+                                    return
+                                }
                                 cartModel.addItem(id)
                             }
                         }

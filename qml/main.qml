@@ -8,28 +8,37 @@ ApplicationWindow {
     id: root
 
     visible: true
-    // Р Р°Р·РјРµСЂ РѕРєРЅР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
     width: 1500
     height: 800
     minimumWidth: 900
     minimumHeight: 600
 
-    // Р¦РµРЅС‚СЂРёСЂСѓРµРј РѕРєРЅРѕ РЅР° СЌРєСЂР°РЅРµ
-    x: Screen.width / 2 - width / 2
-    y: Screen.height / 2 - height / 2
-
     flags: Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint
 
     title: "OBSIDIAN.LUXE | BookStore"
     color: Theme.bgBody
+    
+    // Центрування вікна
+    x: Screen.width / 2 - width / 2
+    y: Screen.height / 2 - height / 2
 
-    // РЎРІРѕР№СЃС‚РІР°
     property int currentCustomerId: appContext ? appContext.currentCustomerId : -1
     property string currentPage: "home"
     property int selectedBookId: 0
     property int selectedAuthorId: 0
 
-    // РђРґР°РїС‚РёРІРЅС‹Рµ СЃРІРѕР№СЃС‚РІР° - РјР°СЃС€С‚Р°Р±РёСЂСѓРµРј РєРѕРЅС‚РµРЅС‚ РїРѕРґ СЂР°Р·РјРµСЂ РѕРєРЅР°
+    // Lazy cache flags (page instance is kept after first load)
+    property bool homeLoaded: true
+    property bool booksLoaded: false
+    property bool bookDetailsLoaded: false
+    property bool authorsLoaded: false
+    property bool authorDetailsLoaded: false
+    property bool cartLoaded: false
+    property bool ordersLoaded: false
+    property bool adminLoaded: false
+    property bool profileLoaded: false
+    property bool warmupDone: false
+
     property real contentScale: Math.min(width / 1280, height / 800)
     property bool isCompact: width < 1100 || height < 700
     property bool isMobile: width < 900
@@ -39,7 +48,7 @@ ApplicationWindow {
 
         if (root.currentPage !== "books") {
             root.currentPage = "books"
-            root.replacePage("books")
+            root.navigateToPage("books")
             Qt.callLater(function() {
                 if (searchQuery.length === 0) {
                     bookModel.loadAllBooks()
@@ -57,79 +66,127 @@ ApplicationWindow {
         }
     }
 
-    function getPageSource(page) {
-        switch(page) {
-            case "home": return "qrc:/pages/HomePage.qml"
-            case "books": return "qrc:/pages/BooksPage.qml"
-            case "bookDetails": return "qrc:/pages/BookDetailsPage.qml"
-            case "authors": return "qrc:/pages/AuthorsPage.qml"
-            case "authorDetails": return "qrc:/pages/AuthorDetailsPage.qml"
-            case "cart": return "qrc:/pages/CartPage.qml"
-            case "orders": return "qrc:/pages/OrdersPage.qml"
-            case "admin": return "qrc:/pages/AdminPage.qml"
-            case "profile": return "qrc:/pages/ProfilePage.qml"
-            default: return "qrc:/pages/HomePage.qml"
+    function resolveAccessiblePage(page) {
+        if (page === "cart" || page === "orders") {
+            if (!(appContext && appContext.loggedIn)) {
+                return "profile"
+            }
+            return page
+        }
+
+        if (page === "admin") {
+            if (appContext && appContext.isAdmin) {
+                return "admin"
+            }
+            return (appContext && appContext.loggedIn) ? "home" : "profile"
+        }
+
+        return page
+    }
+
+    function ensurePageLoaded(page) {
+        switch (page) {
+            case "home": homeLoaded = true; break
+            case "books": booksLoaded = true; break
+            case "bookDetails": bookDetailsLoaded = true; break
+            case "authors": authorsLoaded = true; break
+            case "authorDetails": authorDetailsLoaded = true; break
+            case "cart": cartLoaded = true; break
+            case "orders": ordersLoaded = true; break
+            case "admin": adminLoaded = true; break
+            case "profile": profileLoaded = true; break
+            default: homeLoaded = true; break
         }
     }
 
-    function getPageProperties(page) {
-        if (page === "bookDetails") {
-            return { "bookId": root.selectedBookId }
+    function pageToIndex(page) {
+        switch (page) {
+            case "home": return 0
+            case "books": return 1
+            case "bookDetails": return 2
+            case "authors": return 3
+            case "authorDetails": return 4
+            case "cart": return 5
+            case "orders": return 6
+            case "admin": return 7
+            case "profile": return 8
+            default: return 0
         }
-        if (page === "authorDetails") {
-            return { "authorId": root.selectedAuthorId }
-        }
-        return {}
     }
 
+    function applyPageProperties(page) {
+        if (page === "bookDetails" && bookDetailsLoader.item) {
+            bookDetailsLoader.item.bookId = root.selectedBookId
+        }
+        if (page === "authorDetails" && authorDetailsLoader.item) {
+            authorDetailsLoader.item.authorId = root.selectedAuthorId
+        }
+    }
+
+    function warmupCommonPages() {
+        if (warmupDone) {
+            return
+        }
+        warmupDone = true
+        Qt.callLater(function() { booksLoaded = true })
+        Qt.callLater(function() { authorsLoaded = true })
+        Qt.callLater(function() { profileLoaded = true })
+    }
+
+    function navigateToPage(page) {
+        page = resolveAccessiblePage(page)
+        ensurePageLoaded(page)
+
+        if (root.currentPage !== page) {
+            root.currentPage = page
+        }
+
+        applyPageProperties(page)
+    }
+
+    // Backward compatibility
     function replacePage(page) {
-        var source = getPageSource(page)
-        var props = getPageProperties(page)
-        stackView.replace(source, props)
+        navigateToPage(page)
     }
 
     Component.onCompleted: {
-        console.log("Main window loaded, current page:", currentPage)
-        console.log("Screen size:", Screen.width, "x", Screen.height)
-        console.log("Window position:", x, y)
-        console.log("StackView current item:", stackView.currentItem)
+        // Центрування вікна (безпечно, без binding loop)
+        x = Screen.width / 2 - width / 2
+        y = Screen.height / 2 - height / 2
+        
+        console.log("Main window loaded with optimized navigation")
+        // Load home page on start
+        Qt.callLater(function() {
+            navigateToPage("home")
+            warmupCommonPages()
+        })
     }
 
-    // РЁСЂРёС„С‚ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
     font.family: Theme.fontBody.family
 
-    // Р“Р»Р°РІРЅС‹Р№ layout
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // Р‘РѕРєРѕРІР°СЏ РїР°РЅРµР»СЊ (Dock)
         Sidebar {
             id: sidebar
             Layout.fillHeight: true
             currentPage: root.currentPage
             onNavigate: function(page) {
-                if (root.currentPage !== page) {
-                    root.currentPage = page
-                    root.replacePage(page)
-                }
+                root.navigateToPage(page)
             }
         }
 
-        // РљРѕРЅС‚РµРЅС‚РЅР°СЏ РѕР±Р»Р°СЃС‚СЊ
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 0
 
-            // Р’РµСЂС…РЅСЏСЏ РїР°РЅРµР»СЊ (Header)
             Rectangle {
                 Layout.fillWidth: true
-                // РЈРІРµР»РёС‡РµРЅРЅР°СЏ РІС‹СЃРѕС‚Р° header
                 height: 120
                 color: "transparent"
 
-                // РќРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р°
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
@@ -146,23 +203,22 @@ ApplicationWindow {
                     anchors.bottomMargin: 35
                     spacing: Theme.spacingXL
 
-                    // Р—Р°РіРѕР»РѕРІРѕРє СЃС‚СЂР°РЅРёС†С‹
                     Label {
                         id: pageTitle
                         text: {
                             switch(root.currentPage) {
-                                case "home": return "\u0413\u043e\u043b\u043e\u0432\u043d\u0430"
-                                case "books": return "\u041a\u043e\u043b\u0435\u043a\u0446\u0456\u044f"
-                                case "authors": return "\u0410\u0432\u0442\u043e\u0440\u0438"
-                                case "orders": return "\u0406\u0441\u0442\u043e\u0440\u0456\u044f"
-                                case "admin": return "\u0410\u0434\u043c\u0456\u043d \u043f\u0430\u043d\u0435\u043b\u044c"
-                                case "profile": return "\u041f\u0440\u043e\u0444\u0456\u043b\u044c"
-                                case "cart": return "\u041a\u043e\u0448\u0438\u043a"
-                                case "bookDetails": return "\u041a\u043d\u0438\u0433\u0430"
+                                case "home": return "Головна"
+                                case "books": return "Колекція"
+                                case "authors": return "Автори"
+                                case "orders": return "Історія"
+                                case "admin": return "Адмін панель"
+                                case "profile": return "Профіль"
+                                case "cart": return "Кошик"
+                                case "bookDetails": return "Книга"
                                 case "authorDetails":
                                     return (authorDetailsModel && authorDetailsModel.fullName && authorDetailsModel.fullName.length > 0)
                                             ? authorDetailsModel.fullName
-                                            : "\u0410\u0432\u0442\u043e\u0440"
+                                            : "Автор"
                                 default: return ""
                             }
                         }
@@ -174,20 +230,17 @@ ApplicationWindow {
 
                     Item { Layout.fillWidth: true }
 
-                    // РџРѕРёСЃРє
                     TextField {
                         id: searchField
                         Layout.preferredWidth: 300
                         Layout.preferredHeight: 50
-                        placeholderText: "\u041f\u043e\u0448\u0443\u043a..."
+                        placeholderText: "Пошук..."
                         placeholderTextColor: Theme.textSecondary
                         color: Theme.textPrimary
-                        verticalAlignment: Text.AlignVCenter
+                        verticalAlignment: TextInput.AlignVCenter
 
                         background: Rectangle {
                             color: "transparent"
-
-                            // РќРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р°
                             Rectangle {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
@@ -213,72 +266,130 @@ ApplicationWindow {
                 }
             }
 
-            // РћР±Р»Р°СЃС‚СЊ СЃС‚СЂР°РЅРёС†
-            StackView {
-                id: stackView
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                // РСЃРїРѕР»СЊР·СѓРµРј Loader РґР»СЏ РѕС‚Р»РѕР¶РµРЅРЅРѕР№ Р·Р°РіСЂСѓР·РєРё
-                initialItem: "qrc:/pages/HomePage.qml"
+                StackLayout {
+                    id: pageStack
+                    anchors.fill: parent
+                    currentIndex: root.pageToIndex(root.currentPage)
 
-                replaceEnter: Transition {
-                    PropertyAnimation {
-                        property: "opacity"
-                        from: 0
-                        to: 1
-                        duration: Theme.animationSmooth
-                    }
-                }
-
-                replaceExit: Transition {
-                    PropertyAnimation {
-                        property: "opacity"
-                        from: 1
-                        to: 0
-                        duration: Theme.animationSmooth
-                    }
-                }
-            }
-
-            // Fallback - РїРѕРєР°Р·С‹РІР°РµРј РµСЃР»Рё StackView РїСѓСЃС‚РѕР№
-            Rectangle {
-                visible: stackView.currentItem === null
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: Theme.bgBody
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 20
-
-                    Label {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "\u0417\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f..."
-                        font.pixelSize: 24
-                        color: Theme.textPrimary
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: homeLoader
+                            anchors.fill: parent
+                            active: root.homeLoaded
+                            source: "qrc:/pages/HomePage.qml"
+                            asynchronous: false
+                        }
                     }
 
-                    Rectangle {
-                        id: progressBar
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: 200
-                        height: 4
-                        color: Theme.borderLight
-                        radius: 2
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: booksLoader
+                            anchors.fill: parent
+                            active: root.booksLoaded
+                            source: "qrc:/pages/BooksPage.qml"
+                            asynchronous: root.currentPage !== "books"
+                        }
+                    }
 
-                        Rectangle {
-                            id: progressIndicator
-                            width: progressBar.width * 0.6
-                            height: progressBar.height
-                            color: Theme.accentWhite
-                            radius: 2
-
-                            SequentialAnimation on x {
-                                loops: Animation.Infinite
-                                NumberAnimation { from: 0; to: progressBar.width - progressIndicator.width; duration: 1000 }
-                                NumberAnimation { from: progressBar.width - progressIndicator.width; to: 0; duration: 1000 }
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: bookDetailsLoader
+                            anchors.fill: parent
+                            active: root.bookDetailsLoaded
+                            source: "qrc:/pages/BookDetailsPage.qml"
+                            asynchronous: false
+                            onLoaded: {
+                                if (item) {
+                                    item.bookId = root.selectedBookId
+                                }
                             }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: authorsLoader
+                            anchors.fill: parent
+                            active: root.authorsLoaded
+                            source: "qrc:/pages/AuthorsPage.qml"
+                            asynchronous: root.currentPage !== "authors"
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: authorDetailsLoader
+                            anchors.fill: parent
+                            active: root.authorDetailsLoaded
+                            source: "qrc:/pages/AuthorDetailsPage.qml"
+                            asynchronous: false
+                            onLoaded: {
+                                if (item) {
+                                    item.authorId = root.selectedAuthorId
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: cartLoader
+                            anchors.fill: parent
+                            active: root.cartLoaded
+                            source: "qrc:/pages/CartPage.qml"
+                            asynchronous: root.currentPage !== "cart"
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: ordersLoader
+                            anchors.fill: parent
+                            active: root.ordersLoaded
+                            source: "qrc:/pages/OrdersPage.qml"
+                            asynchronous: root.currentPage !== "orders"
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: adminLoader
+                            anchors.fill: parent
+                            active: root.adminLoaded
+                            source: "qrc:/pages/AdminPage.qml"
+                            asynchronous: root.currentPage !== "admin"
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Loader {
+                            id: profileLoader
+                            anchors.fill: parent
+                            active: root.profileLoaded
+                            source: "qrc:/pages/ProfilePage.qml"
+                            asynchronous: root.currentPage !== "profile"
                         }
                     }
                 }
@@ -286,21 +397,15 @@ ApplicationWindow {
         }
     }
 
-    // Р¤СѓРЅРєС†РёСЏ РЅР°РІРёРіР°С†РёРё (РІС‹Р·С‹РІР°РµС‚СЃСЏ РёР· C++)
-    function navigateToPage(pageName) {
-        console.log("Navigating to:", pageName)
-        root.replacePage(pageName)
+    AiChatWidget {
+        id: aiChat
     }
 
-    // РћР±СЂР°Р±РѕС‚РєР° РЅР°РІРёРіР°С†РёРё РѕС‚ AppContext
     Connections {
         target: appContext
         function onNavigateToPage(page) {
             console.log("Navigate to page signal:", page)
-            if (root.currentPage !== page) {
-                root.currentPage = page
-                root.replacePage(page)
-            }
+            root.navigateToPage(page)
         }
     }
 }

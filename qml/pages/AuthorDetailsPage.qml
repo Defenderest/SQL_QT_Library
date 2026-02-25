@@ -1,4 +1,4 @@
-﻿import QtQuick 2.15
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import "../components"
@@ -191,8 +191,9 @@ ScrollView {
                 }
 
                 Flow {
-                    width: parent.width
+                    Layout.fillWidth: true
                     spacing: 40
+                    flow: Flow.LeftToRight
 
                     Repeater {
                         model: authorDetailsModel.books
@@ -211,6 +212,10 @@ ScrollView {
                             }
 
                             onAddToCart: function(id) {
+                                if (!(appContext && appContext.loggedIn)) {
+                                    appContext.navigateTo("profile")
+                                    return
+                                }
                                 cartModel.addItem(id)
                             }
                         }

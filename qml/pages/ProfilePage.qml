@@ -12,10 +12,29 @@ ScrollView {
     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
     property string saveMessage: ""
+    property bool authFormVisible: false
+    property bool registerMode: false
+    property string authMessage: ""
+    property bool authError: false
 
     Component.onCompleted: {
-        console.log("ProfilePage loaded, loading profile...")
-        profileModel.loadProfile()
+        if (appContext && appContext.loggedIn) {
+            console.log("ProfilePage loaded, loading profile...")
+            profileModel.loadProfile()
+        }
+    }
+
+    Connections {
+        target: appContext
+        function onLoggedInChanged() {
+            root.saveMessage = ""
+            root.authFormVisible = false
+            root.authMessage = ""
+            root.authError = false
+            if (appContext && appContext.loggedIn) {
+                profileModel.loadProfile()
+            }
+        }
     }
 
     ColumnLayout {
@@ -25,7 +44,396 @@ ScrollView {
 
         Item { Layout.preferredHeight: 40 }
 
+        Rectangle {
+            visible: !(appContext && appContext.loggedIn)
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.spacingXXL
+            Layout.rightMargin: Theme.spacingXXL
+            Layout.preferredHeight: root.authFormVisible ? 600 : 300
+            color: Qt.rgba(1, 1, 1, 0.02)
+            border.width: 1
+            border.color: Theme.borderLight
+            radius: Theme.radiusSoft
+
+            Rectangle {
+                visible: root.authFormVisible
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.leftMargin: Theme.spacingM
+                anchors.topMargin: Theme.spacingM
+                width: 34
+                height: 34
+                radius: 17
+                color: authBackArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                border.width: 1
+                border.color: Theme.borderLight
+
+                Behavior on color {
+                    ColorAnimation { duration: Theme.animationFast }
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    text: "<"
+                    color: Theme.textPrimary
+                    font.family: Theme.fontBody.family
+                    font.pixelSize: 16
+                }
+
+                MouseArea {
+                    id: authBackArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.authFormVisible = false
+                        root.authMessage = ""
+                        root.authError = false
+                    }
+                }
+            }
+
+            Column {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 40, 460)
+                spacing: Theme.spacingM
+
+                Label {
+                    width: parent.width
+                    text: "Увійдіть у профіль"
+                    horizontalAlignment: Text.AlignHCenter
+                    color: Theme.textPrimary
+                    font.family: Theme.fontDisplay.family
+                    font.pixelSize: 30
+                }
+
+                Label {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "У гостьовому режимі доступний перегляд книг, авторів і AI-чат. Для кошика, замовлень та відгуків увійдіть або створіть акаунт."
+                    color: Theme.textSecondary
+                    font.family: Theme.fontBody.family
+                    font.pixelSize: 13
+                }
+
+                Rectangle {
+                    visible: !root.authFormVisible
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 250
+                    height: 46
+                    radius: Theme.radiusRound
+                    border.width: 1
+                    border.color: Theme.accentWhite
+                    color: revealAuthArea.containsMouse ? Theme.accentWhite : "transparent"
+
+                    Behavior on color {
+                        ColorAnimation { duration: Theme.animationFast }
+                    }
+
+                    Label {
+                        anchors.centerIn: parent
+                        text: "Войти в аккаунт"
+                        color: revealAuthArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 12
+                        font.capitalization: Font.AllUppercase
+                        font.letterSpacing: 1.4
+                    }
+
+                    MouseArea {
+                        id: revealAuthArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.authFormVisible = true
+                            root.registerMode = false
+                            root.authMessage = ""
+                            root.authError = false
+                        }
+                    }
+                }
+
+                Column {
+                    visible: root.authFormVisible
+                    width: parent.width
+                    spacing: Theme.spacingM
+
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 12
+
+                        Rectangle {
+                            width: 140
+                            height: 38
+                            radius: Theme.radiusRound
+                            border.width: 1
+                            border.color: root.registerMode ? Theme.borderLight : Theme.accentWhite
+                            color: root.registerMode ? "transparent" : Qt.rgba(1, 1, 1, 0.08)
+
+                            Label {
+                                anchors.centerIn: parent
+                                text: "Вхід"
+                                color: Theme.textPrimary
+                                font.family: Theme.fontBody.family
+                                font.pixelSize: 11
+                                font.capitalization: Font.AllUppercase
+                                font.letterSpacing: 1.2
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.registerMode = false
+                                    root.authMessage = ""
+                                    root.authError = false
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: 140
+                            height: 38
+                            radius: Theme.radiusRound
+                            border.width: 1
+                            border.color: root.registerMode ? Theme.accentWhite : Theme.borderLight
+                            color: root.registerMode ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+
+                            Label {
+                                anchors.centerIn: parent
+                                text: "Реєстрація"
+                                color: Theme.textPrimary
+                                font.family: Theme.fontBody.family
+                                font.pixelSize: 11
+                                font.capitalization: Font.AllUppercase
+                                font.letterSpacing: 1.2
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.registerMode = true
+                                    root.authMessage = ""
+                                    root.authError = false
+                                }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestFirstNameField
+                        visible: root.registerMode
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Ім'я"
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestFirstNameField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestFirstNameField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestLastNameField
+                        visible: root.registerMode
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Прізвище"
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestLastNameField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestLastNameField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestEmailField
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Email"
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestEmailField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestEmailField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestPasswordField
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Пароль"
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        echoMode: TextInput.Password
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestPasswordField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestPasswordField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestConfirmPasswordField
+                        visible: root.registerMode
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Підтвердіть пароль"
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        echoMode: TextInput.Password
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestConfirmPasswordField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestConfirmPasswordField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 250
+                        height: 46
+                        radius: Theme.radiusRound
+                        border.width: 1
+                        border.color: Theme.accentWhite
+                        color: submitArea.containsMouse ? Theme.accentWhite : "transparent"
+
+                        Behavior on color {
+                            ColorAnimation { duration: Theme.animationFast }
+                        }
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: root.registerMode ? "Створити акаунт" : "Увійти"
+                            color: submitArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                            font.family: Theme.fontBody.family
+                            font.pixelSize: 12
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 1.4
+                        }
+
+                        MouseArea {
+                            id: submitArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                var ok = false
+                                if (root.registerMode) {
+                                    ok = appContext.registerWithCredentials(
+                                                guestFirstNameField.text,
+                                                guestLastNameField.text,
+                                                guestEmailField.text,
+                                                guestPasswordField.text,
+                                                guestConfirmPasswordField.text)
+                                } else {
+                                    ok = appContext.loginWithCredentials(guestEmailField.text, guestPasswordField.text)
+                                }
+
+                                if (ok) {
+                                    root.authError = false
+                                    root.authMessage = "Успішно"
+                                    guestPasswordField.text = ""
+                                    guestConfirmPasswordField.text = ""
+                                } else {
+                                    root.authError = true
+                                    root.authMessage = appContext.authError
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+                Label {
+                    width: parent.width
+                    visible: root.authFormVisible && root.authMessage.length > 0
+                    text: root.authMessage
+                    horizontalAlignment: Text.AlignHCenter
+                    color: root.authError ? Theme.error : Theme.success
+                    font.family: Theme.fontBody.family
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+            }
+        }
+
         RowLayout {
+            visible: appContext && appContext.loggedIn
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXXL
             Layout.rightMargin: Theme.spacingXXL
@@ -65,6 +473,7 @@ ScrollView {
         }
 
         GridLayout {
+            visible: appContext && appContext.loggedIn
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXXL
             Layout.rightMargin: Theme.spacingXXL
@@ -201,13 +610,15 @@ ScrollView {
 
         Rectangle {
             id: saveButton
+            visible: appContext && appContext.loggedIn
             Layout.topMargin: 50
             Layout.leftMargin: Theme.spacingXXL
-            width: 190
-            height: 50
+            width: 220
+            height: 46
             color: saveArea.containsMouse ? Theme.accentWhite : "transparent"
             border.color: Theme.accentWhite
             border.width: 1
+            radius: Theme.radiusSharp
 
             Behavior on color {
                 ColorAnimation { duration: Theme.animationFast }
@@ -219,7 +630,7 @@ ScrollView {
                 font.family: Theme.fontBody.family
                 font.pixelSize: 12
                 font.capitalization: Font.AllUppercase
-                font.letterSpacing: 2
+                font.letterSpacing: 1
                 color: saveArea.containsMouse ? Theme.bgBody : Theme.textPrimary
             }
 
@@ -239,11 +650,45 @@ ScrollView {
             }
         }
 
+        Rectangle {
+            visible: appContext && appContext.loggedIn
+            Layout.topMargin: 14
+            Layout.leftMargin: Theme.spacingXXL
+            width: 220
+            height: 46
+            color: logoutArea.containsMouse ? Theme.accentWhite : "transparent"
+            border.color: Theme.accentWhite
+            border.width: 1
+            radius: Theme.radiusSharp
+
+            Behavior on color {
+                ColorAnimation { duration: Theme.animationFast }
+            }
+
+            Label {
+                anchors.centerIn: parent
+                text: "Вийти з акаунта"
+                font.family: Theme.fontBody.family
+                font.pixelSize: 12
+                font.capitalization: Font.AllUppercase
+                font.letterSpacing: 1
+                color: logoutArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+            }
+
+            MouseArea {
+                id: logoutArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: appContext.logout()
+            }
+        }
+
         Label {
+            visible: (appContext && appContext.loggedIn) && text.length > 0
             Layout.topMargin: 12
             Layout.leftMargin: Theme.spacingXXL
             text: root.saveMessage
-            visible: text.length > 0
             color: Theme.textSecondary
             font.pixelSize: 12
         }

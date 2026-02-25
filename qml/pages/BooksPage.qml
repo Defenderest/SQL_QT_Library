@@ -145,6 +145,10 @@ Item {
                         }
 
                         onAddToCart: function(bookId) {
+                            if (!(appContext && appContext.loggedIn)) {
+                                appContext.navigateTo("profile")
+                                return
+                            }
                             cartModel.addItem(bookId)
                         }
                     }

@@ -176,8 +176,12 @@ void CartModel::setLiqPayPrivateKey(const QString& privateKey)
 
 void CartModel::addItem(int bookId)
 {
-    if (!m_dbManager || m_customerId <= 0) {
-        emit errorOccurred("Database manager not set");
+    if (!m_dbManager) {
+        emit errorOccurred("Помилка підключення до бази даних");
+        return;
+    }
+    if (m_customerId <= 0) {
+        emit errorOccurred("Щоб додавати книги в кошик, увійдіть у профіль");
         return;
     }
 
@@ -206,8 +210,12 @@ void CartModel::addItem(int bookId)
 
 void CartModel::removeItem(int bookId)
 {
-    if (!m_dbManager || m_customerId <= 0) {
-        emit errorOccurred("Database manager not set");
+    if (!m_dbManager) {
+        emit errorOccurred("Помилка підключення до бази даних");
+        return;
+    }
+    if (m_customerId <= 0) {
+        emit errorOccurred("Щоб працювати з кошиком, увійдіть у профіль");
         return;
     }
 
@@ -221,8 +229,12 @@ void CartModel::removeItem(int bookId)
 
 void CartModel::increaseQuantity(int bookId)
 {
-    if (!m_dbManager || m_customerId <= 0) {
-        emit errorOccurred("Database manager not set");
+    if (!m_dbManager) {
+        emit errorOccurred("Помилка підключення до бази даних");
+        return;
+    }
+    if (m_customerId <= 0) {
+        emit errorOccurred("Щоб працювати з кошиком, увійдіть у профіль");
         return;
     }
 
@@ -241,8 +253,12 @@ void CartModel::increaseQuantity(int bookId)
 
 void CartModel::decreaseQuantity(int bookId)
 {
-    if (!m_dbManager || m_customerId <= 0) {
-        emit errorOccurred("Database manager not set");
+    if (!m_dbManager) {
+        emit errorOccurred("Помилка підключення до бази даних");
+        return;
+    }
+    if (m_customerId <= 0) {
+        emit errorOccurred("Щоб працювати з кошиком, увійдіть у профіль");
         return;
     }
 
@@ -286,8 +302,14 @@ void CartModel::clearCart()
 
 bool CartModel::checkout(const QString& shippingAddress, const QString& paymentMethod)
 {
-    if (!m_dbManager || m_customerId <= 0) {
-        const QString message = "Database manager not set";
+    if (!m_dbManager) {
+        const QString message = "Помилка підключення до бази даних";
+        emit errorOccurred(message);
+        emit checkoutFailed(message);
+        return false;
+    }
+    if (m_customerId <= 0) {
+        const QString message = "Щоб оформити замовлення, увійдіть у профіль";
         emit errorOccurred(message);
         emit checkoutFailed(message);
         return false;

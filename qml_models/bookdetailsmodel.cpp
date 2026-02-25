@@ -103,8 +103,12 @@ void BookDetailsModel::loadBookDetails(int bookId)
 
 bool BookDetailsModel::submitComment(int customerId, const QString& commentText, int rating)
 {
-    if (!m_dbManager || m_bookId <= 0 || customerId <= 0) {
+    if (!m_dbManager || m_bookId <= 0) {
         emit errorOccurred("Invalid data to submit comment");
+        return false;
+    }
+    if (customerId <= 0) {
+        emit errorOccurred("Щоб залишати відгуки, увійдіть у профіль");
         return false;
     }
     if (commentText.trimmed().isEmpty() || rating < 1 || rating > 5) {

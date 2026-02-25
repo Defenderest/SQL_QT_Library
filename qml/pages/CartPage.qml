@@ -63,7 +63,51 @@ ScrollView {
 
         Item { Layout.preferredHeight: Theme.spacingL }
 
+        Rectangle {
+            visible: !(appContext && appContext.loggedIn)
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.spacingXXL
+            Layout.rightMargin: Theme.spacingXXL
+            Layout.preferredHeight: 220
+            color: Qt.rgba(1, 1, 1, 0.02)
+            border.width: 1
+            border.color: Theme.borderLight
+            radius: Theme.radiusSoft
+
+            Column {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 40, 420)
+                spacing: Theme.spacingM
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "Кошик доступний після входу"
+                    color: Theme.textPrimary
+                    font.family: Theme.fontDisplay.family
+                    font.pixelSize: 28
+                }
+
+                Label {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "Увійдіть у профіль, щоб додавати книги в кошик та оформлювати замовлення."
+                    color: Theme.textSecondary
+                    font.family: Theme.fontBody.family
+                    font.pixelSize: 13
+                }
+
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Перейти в профіль"
+                    onClicked: appContext.navigateTo("profile")
+                }
+            }
+        }
+
         Item {
+            visible: appContext && appContext.loggedIn
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXXL
             Layout.rightMargin: Theme.spacingXXL

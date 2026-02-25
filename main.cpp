@@ -12,7 +12,6 @@
 #include <QByteArray>
 
 #include "database.h"
-#include "logindialog.h"
 
 // QML Models
 #include "qml_models/appcontext.h"
@@ -25,6 +24,7 @@
 #include "qml_models/profilemodel.h"
 #include "qml_models/adminmodel.h"
 #include "qml_models/theme.h"
+#include "qml_models/geminiclient.h"
 
 int main(int argc, char *argv[])
 {
@@ -40,18 +40,16 @@ int main(int argc, char *argv[])
                      "--disable-renderer-backgrounding "
                      "--disable-backgrounding-occluded-windows";
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
-    // Р’РєР»СЋС‡Р°РµРј РІС‹СЃРѕРєРѕРµ DPI РґР»СЏ С‡С‘С‚РєРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-    // РЎРѕР·РґР°РµРј GUI РїСЂРёР»РѕР¶РµРЅРёРµ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ РІРёРґР¶РµС‚РѕРІ (РґР»СЏ РґРёР°Р»РѕРіРѕРІ)
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/icons/icons/app_icon.png"));
     app.setApplicationName("Bookstore");
     app.setOrganizationName("Patsera_Ihor");
     app.setApplicationVersion("1.0");
 
-    // РџРѕРєР°Р·С‹РІР°РµРј Splash Screen СЃСЂР°Р·Сѓ, С‡С‚РѕР±С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРёРґРµР», С‡С‚Рѕ РїСЂРёР»РѕР¶РµРЅРёРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ
     QSplashScreen splash(QPixmap(":/images/banner2.jpg").scaled(800, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     QLabel splashLabel(&splash);
     splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nР—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ...");
@@ -62,7 +60,7 @@ int main(int argc, char *argv[])
     app.processEvents();
 
     // РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nРџС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ Р±Р°Р·Рё РґР°РЅРёС…...");
+    splashLabel.setText("Library");
     app.processEvents();
 
     DatabaseManager dbManager;
@@ -83,34 +81,19 @@ int main(int argc, char *argv[])
     }
 
     // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Рё Р·Р°РїРѕР»РЅРµРЅРёРµ Р‘Р”
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nР†РЅС–С†С–Р°Р»С–Р·Р°С†С–СЏ Р±Р°Р·Рё РґР°РЅРёС…...");
+    splashLabel.setText("OLibrary");
     app.processEvents();
 
     if (!dbManager.checkAndInitDatabase()) {
         qWarning() << "Database initialization failed or was partially successful.";
     }
 
-    // Р—Р°РєСЂС‹РІР°РµРј splash РїРµСЂРµРґ РїРѕРєР°Р·РѕРј РґРёР°Р»РѕРіР° РІС…РѕРґР°
+    // Закриваємо splash та запускаємо застосунок у гостьовому режимі
     splash.finish(nullptr);
 
-    // РџРѕРєР°Р·С‹РІР°РµРј РґРёР°Р»РѕРі РІС…РѕРґР° (РїРѕРєР° РЅР° РІРёРґР¶РµС‚Р°С…)
-    LoginDialog loginDialog(&dbManager);
     int loggedInUserId = -1;
-
-    if (loginDialog.exec() != QDialog::Accepted) {
-        return 0;
-    }
-
-    loggedInUserId = loginDialog.getLoggedInCustomerId();
-    const bool loggedInIsAdmin = loginDialog.getLoggedInIsAdmin();
-    if (loggedInUserId <= 0) {
-        QMessageBox::critical(nullptr, QObject::tr("РџРѕРјРёР»РєР° РІС…РѕРґСѓ"),
-                              QObject::tr("РќРµ РІРґР°Р»РѕСЃСЏ РѕС‚СЂРёРјР°С‚Рё С–РґРµРЅС‚РёС„С–РєР°С‚РѕСЂ РєРѕСЂРёСЃС‚СѓРІР°С‡Р° РїС–СЃР»СЏ РІС…РѕРґСѓ."));
-        qCritical() << "Failed to retrieve valid user ID after login.";
-        return 1;
-    }
-
-    qDebug() << "User logged in with ID:" << loggedInUserId;
+    const bool loggedInIsAdmin = false;
+    qDebug() << "Application started in guest mode.";
 
     // РЎРѕР·РґР°РµРј QML РјРѕРґРµР»Рё (Р»С‘РіРєРёРµ - РїСЂРѕСЃС‚Рѕ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ)
     AppContext appContext;
@@ -179,6 +162,22 @@ int main(int argc, char *argv[])
     adminModel.setDbManager(&dbManager);
     // РћРўРљР›Р®Р§Р•РќРћ: profileModel.loadProfile(); - Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё ProfilePage
 
+    // Создаем Gemini AI клиент
+    GeminiClient geminiClient;
+    QString geminiApiKey = qEnvironmentVariable("GEMINI_API_KEY");
+    if (geminiApiKey.isEmpty()) {
+        geminiApiKey = qEnvironmentVariable("GOOGLE_API_KEY");
+    }
+    geminiClient.setApiKey(geminiApiKey);
+    if (geminiApiKey.isEmpty()) {
+        qWarning() << "GEMINI_API_KEY not set. AI chat will not work.";
+    } else {
+        // Виводимо список доступних моделей
+        QTimer::singleShot(1000, [&geminiClient]() {
+            geminiClient.listAvailableModels();
+        });
+    }
+
     // РЎРѕР·РґР°РµРј Theme
     Theme theme;
 
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     // Р РµРіРёСЃС‚СЂРёСЂСѓРµРј РєРѕРЅС‚РµРєСЃС‚РЅС‹Рµ СЃРІРѕР№СЃС‚РІР° (РґРѕСЃС‚СѓРїРЅС‹ РІРѕ РІСЃРµС… QML С„Р°Р№Р»Р°С…)
-    engine.rootContext()->setContextProperty("Theme", &theme);
+engine.rootContext()->setContextProperty("Theme", &theme);
     engine.rootContext()->setContextProperty("appContext", &appContext);
     engine.rootContext()->setContextProperty("bookModel", &bookModel);
     engine.rootContext()->setContextProperty("newArrivalsModel", &newArrivalsModel);
@@ -200,6 +199,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("ordersModel", &ordersModel);
     engine.rootContext()->setContextProperty("profileModel", &profileModel);
     engine.rootContext()->setContextProperty("adminModel", &adminModel);
+    engine.rootContext()->setContextProperty("geminiClient", &geminiClient);
 
     // Р—Р°РіСЂСѓР¶Р°РµРј РіР»Р°РІРЅС‹Р№ QML С„Р°Р№Р»
     const QUrl url(QStringLiteral("qrc:/main.qml"));
@@ -269,10 +269,59 @@ int main(int argc, char *argv[])
         // TODO: Show checkout dialog
     });
 
+    QObject::connect(&appContext, &AppContext::loginDialogRequested,
+                     [&engine]() {
+        if (!engine.rootObjects().isEmpty()) {
+            QObject *rootObj = engine.rootObjects().first();
+            if (rootObj) {
+                rootObj->setProperty("currentPage", "profile");
+                QMetaObject::invokeMethod(rootObj, "navigateToPage", Q_ARG(QVariant, "profile"));
+            }
+        }
+    });
+
+    QObject::connect(&appContext, &AppContext::loginRequested,
+                     [&appContext, &cartModel, &ordersModel, &profileModel, &engine]() {
+        const int userId = appContext.currentCustomerId();
+        if (userId <= 0) {
+            return;
+        }
+
+        cartModel.setCustomerId(userId);
+        ordersModel.setCustomerId(userId);
+        profileModel.setCustomerId(userId);
+
+        cartModel.loadCart();
+        ordersModel.loadOrders();
+        profileModel.loadProfile();
+
+        if (!engine.rootObjects().isEmpty()) {
+            QObject *rootObj = engine.rootObjects().first();
+            if (rootObj) {
+                rootObj->setProperty("currentPage", "profile");
+                QMetaObject::invokeMethod(rootObj, "navigateToPage", Q_ARG(QVariant, "profile"));
+            }
+        }
+    });
+
     QObject::connect(&appContext, &AppContext::logoutRequested,
-                     &app, [&app]() {
+                     [&appContext, &cartModel, &ordersModel, &profileModel, &engine]() {
         qDebug() << "Logout requested";
-        app.quit();
+        cartModel.setCustomerId(-1);
+        ordersModel.setCustomerId(-1);
+        profileModel.setCustomerId(-1);
+        cartModel.loadCart();
+        ordersModel.loadOrders();
+
+        appContext.navigateTo("home");
+
+        if (!engine.rootObjects().isEmpty()) {
+            QObject *rootObj = engine.rootObjects().first();
+            if (rootObj) {
+                rootObj->setProperty("currentPage", "home");
+                QMetaObject::invokeMethod(rootObj, "navigateToPage", Q_ARG(QVariant, "home"));
+            }
+        }
     });
 
     // Р—Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ РґР»СЏ РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹ РџРћРЎР›Р• Р·Р°РїСѓСЃРєР° QML, С‡С‚РѕР±С‹ UI РїРѕСЏРІРёР»СЃСЏ Р±С‹СЃС‚СЂРѕ

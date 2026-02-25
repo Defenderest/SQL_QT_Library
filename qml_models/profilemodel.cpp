@@ -93,20 +93,33 @@ void ProfileModel::loadProfile()
 }
 
 bool ProfileModel::updateProfile(const QString& firstName, const QString& lastName,
-                                  const QString& phone, const QString& address)
+                                   const QString& phone, const QString& address)
 {
     if (!m_dbManager || m_customerId <= 0) {
-        emit errorOccurred("Not logged in");
+        emit errorOccurred("Спочатку увійдіть у профіль");
         return false;
     }
 
-    // TODO: Implement update in DatabaseManager
-    // For now just update local data
-    m_profile.firstName = firstName;
-    m_profile.lastName = lastName;
-    m_profile.phone = phone;
-    m_profile.address = address;
+    const QString cleanedFirstName = firstName.trimmed();
+    const QString cleanedLastName = lastName.trimmed();
+    const QString cleanedPhone = phone.trimmed();
+    const QString cleanedAddress = address.trimmed();
 
+    if (cleanedFirstName.isEmpty() || cleanedLastName.isEmpty()) {
+        emit errorOccurred("Ім'я та прізвище обов'язкові");
+        return false;
+    }
+
+    const bool nameOk = m_dbManager->updateCustomerName(m_customerId, cleanedFirstName, cleanedLastName);
+    const bool phoneOk = m_dbManager->updateCustomerPhone(m_customerId, cleanedPhone);
+    const bool addressOk = m_dbManager->updateCustomerAddress(m_customerId, cleanedAddress);
+
+    if (!(nameOk && phoneOk && addressOk)) {
+        emit errorOccurred("Не вдалося зберегти зміни профілю");
+        return false;
+    }
+
+    m_profile = m_dbManager->getCustomerProfileInfo(m_customerId);
     emit profileChanged();
     emit profileUpdated();
     return true;
