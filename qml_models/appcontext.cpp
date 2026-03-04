@@ -1,8 +1,10 @@
 #include "appcontext.h"
 #include <QDebug>
-#include <QCryptographicHash>
+#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QSqlError>
+
+#include "../utils/password_utils.h"
 
 AppContext::AppContext(QObject *parent)
     : QObject(parent)
@@ -96,16 +98,6 @@ void AppContext::showOrderDetails(int orderId)
     emit showOrderDetailsRequested(orderId);
 }
 
-void AppContext::checkout()
-{
-    if (!loggedIn()) {
-        emit infoMessage("Щоб оформити замовлення, увійдіть у профіль");
-        emit navigateToPage("profile");
-        return;
-    }
-    emit checkoutRequested();
-}
-
 void AppContext::editProfile()
 {
     emit editProfileRequested();
@@ -156,12 +148,16 @@ bool AppContext::loginWithCredentials(const QString& email, const QString& passw
         return false;
     }
 
-    const QString enteredPasswordHashHex = QString::fromUtf8(
-        QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex());
-
-    if (enteredPasswordHashHex != loginInfo.passwordHash) {
+    if (!verifyPasswordHash(password, loginInfo.passwordHash)) {
         setAuthError("Невірний email або пароль");
         return false;
+    }
+
+    if (passwordHashNeedsUpgrade(loginInfo.passwordHash)) {
+        const QString upgradedHash = createPasswordHash(password);
+        if (!upgradedHash.isEmpty()) {
+            m_dbManager->updateCustomerPasswordHash(loginInfo.customerId, upgradedHash);
+        }
     }
 
     setCurrentCustomerId(loginInfo.customerId);
@@ -173,6 +169,7 @@ bool AppContext::loginWithCredentials(const QString& email, const QString& passw
 bool AppContext::registerWithCredentials(const QString& firstName,
                                          const QString& lastName,
                                          const QString& email,
+                                         const QString& phone,
                                          const QString& password,
                                          const QString& confirmPassword)
 {
@@ -187,12 +184,33 @@ bool AppContext::registerWithCredentials(const QString& firstName,
     CustomerRegistrationInfo regInfo;
     regInfo.firstName = firstName.trimmed();
     regInfo.lastName = lastName.trimmed();
-    regInfo.email = email.trimmed();
+    regInfo.email = email.trimmed().toLower();
+    regInfo.phone = normalizePhone(phone);
     regInfo.password = password;
 
     if (regInfo.firstName.isEmpty() || regInfo.lastName.isEmpty() ||
-        regInfo.email.isEmpty() || regInfo.password.isEmpty()) {
+        regInfo.email.isEmpty() || regInfo.phone.isEmpty() || regInfo.password.isEmpty()) {
         setAuthError("Заповніть усі поля");
+        return false;
+    }
+
+    if (!isValidName(regInfo.firstName) || !isValidName(regInfo.lastName)) {
+        setAuthError("Ім'я та прізвище можуть містити лише літери, пробіл, апостроф або дефіс");
+        return false;
+    }
+
+    if (!isValidEmail(regInfo.email)) {
+        setAuthError("Вкажіть коректний email");
+        return false;
+    }
+
+    if (!isValidPhone(regInfo.phone)) {
+        setAuthError("Вкажіть коректний номер телефону");
+        return false;
+    }
+
+    if (!isStrongPassword(regInfo.password)) {
+        setAuthError("Пароль має містити щонайменше 8 символів, літери та цифри");
         return false;
     }
 
@@ -216,6 +234,53 @@ bool AppContext::registerWithCredentials(const QString& firstName,
     setIsAdmin(false);
     emit loginRequested();
     return true;
+}
+
+bool AppContext::isValidName(const QString& value) const
+{
+    if (value.length() < 2 || value.length() > 40) {
+        return false;
+    }
+
+    static const QRegularExpression namePattern(QStringLiteral("^[\\p{L}'\\-\\s]+$"));
+    return namePattern.match(value).hasMatch();
+}
+
+bool AppContext::isValidEmail(const QString& value) const
+{
+    static const QRegularExpression emailPattern(
+        QStringLiteral("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"),
+        QRegularExpression::CaseInsensitiveOption);
+    return emailPattern.match(value).hasMatch();
+}
+
+bool AppContext::isValidPhone(const QString& value) const
+{
+    static const QRegularExpression phonePattern(QStringLiteral("^\\+?[0-9]{10,15}$"));
+    return phonePattern.match(value).hasMatch();
+}
+
+bool AppContext::isStrongPassword(const QString& value) const
+{
+    if (value.length() < 8) {
+        return false;
+    }
+
+    static const QRegularExpression hasLetter(QStringLiteral("[A-Za-zА-Яа-яІіЇїЄєҐґ]"));
+    static const QRegularExpression hasDigit(QStringLiteral("[0-9]"));
+    return hasLetter.match(value).hasMatch() && hasDigit.match(value).hasMatch();
+}
+
+QString AppContext::normalizePhone(const QString& value) const
+{
+    QString normalized = value.trimmed();
+    normalized.remove(QRegularExpression(QStringLiteral("[\\s\\-()]")));
+
+    if (normalized.startsWith(QStringLiteral("00"))) {
+        normalized = QStringLiteral("+") + normalized.mid(2);
+    }
+
+    return normalized;
 }
 
 QString AppContext::getBooksCatalogForAI()
@@ -297,6 +362,35 @@ QString AppContext::getBooksCatalogForAI()
     QString result = contextParts.join("\n");
     qDebug() << "✅ Отримано" << count << "книг для AI";
     
+    return result;
+}
+
+QVariantList AppContext::getSearchSuggestions(const QString& query, int limit) const
+{
+    QVariantList result;
+
+    if (!m_dbManager) {
+        return result;
+    }
+
+    const QString trimmedQuery = query.trimmed();
+    if (trimmedQuery.isEmpty()) {
+        return result;
+    }
+
+    const QList<SearchSuggestionInfo> suggestions =
+        m_dbManager->getSearchSuggestions(trimmedQuery, limit > 0 ? limit : 8);
+
+    for (const SearchSuggestionInfo& suggestion : suggestions) {
+        QVariantMap item;
+        item["id"] = suggestion.id;
+        item["displayText"] = suggestion.displayText;
+        item["imagePath"] = suggestion.imagePath;
+        item["price"] = suggestion.price;
+        item["type"] = suggestion.type == SearchSuggestionInfo::Book ? "book" : "author";
+        result.append(item);
+    }
+
     return result;
 }
 

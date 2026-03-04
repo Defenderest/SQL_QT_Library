@@ -1,6 +1,7 @@
 #include "profilemodel.h"
 #include "../core/database.h"
 #include <QDebug>
+#include <QRegularExpression>
 
 ProfileModel::ProfileModel(QObject *parent)
     : QObject(parent)
@@ -93,7 +94,7 @@ void ProfileModel::loadProfile()
 }
 
 bool ProfileModel::updateProfile(const QString& firstName, const QString& lastName,
-                                   const QString& phone, const QString& address)
+                                    const QString& phone, const QString& address)
 {
     if (!m_dbManager || m_customerId <= 0) {
         emit errorOccurred("Спочатку увійдіть у профіль");
@@ -102,11 +103,26 @@ bool ProfileModel::updateProfile(const QString& firstName, const QString& lastNa
 
     const QString cleanedFirstName = firstName.trimmed();
     const QString cleanedLastName = lastName.trimmed();
-    const QString cleanedPhone = phone.trimmed();
+    const QString cleanedPhone = normalizePhone(phone);
     const QString cleanedAddress = address.trimmed();
 
     if (cleanedFirstName.isEmpty() || cleanedLastName.isEmpty()) {
         emit errorOccurred("Ім'я та прізвище обов'язкові");
+        return false;
+    }
+
+    if (!isValidName(cleanedFirstName) || !isValidName(cleanedLastName)) {
+        emit errorOccurred("Ім'я та прізвище: тільки літери, пробіл, апостроф або дефіс");
+        return false;
+    }
+
+    if (cleanedPhone.isEmpty()) {
+        emit errorOccurred("Телефон обов'язковий");
+        return false;
+    }
+
+    if (!isValidPhone(cleanedPhone)) {
+        emit errorOccurred("Невірний формат телефону. Приклад: +380XXXXXXXXX");
         return false;
     }
 
@@ -123,4 +139,32 @@ bool ProfileModel::updateProfile(const QString& firstName, const QString& lastNa
     emit profileChanged();
     emit profileUpdated();
     return true;
+}
+
+bool ProfileModel::isValidName(const QString& value) const
+{
+    if (value.length() < 2 || value.length() > 40) {
+        return false;
+    }
+
+    static const QRegularExpression namePattern(QStringLiteral("^[\\p{L}'\\-\\s]+$"));
+    return namePattern.match(value).hasMatch();
+}
+
+bool ProfileModel::isValidPhone(const QString& value) const
+{
+    static const QRegularExpression phonePattern(QStringLiteral("^\\+?[0-9]{10,15}$"));
+    return phonePattern.match(value).hasMatch();
+}
+
+QString ProfileModel::normalizePhone(const QString& value) const
+{
+    QString normalized = value.trimmed();
+    normalized.remove(QRegularExpression(QStringLiteral("[\\s\\-()]")));
+
+    if (normalized.startsWith(QStringLiteral("00"))) {
+        normalized = QStringLiteral("+") + normalized.mid(2);
+    }
+
+    return normalized;
 }

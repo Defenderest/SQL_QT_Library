@@ -56,6 +56,10 @@ private:
     DatabaseManager* m_dbManager = nullptr;
     int m_customerId = -1;
     CustomerProfileInfo m_profile;
+
+    bool isValidName(const QString& value) const;
+    bool isValidPhone(const QString& value) const;
+    QString normalizePhone(const QString& value) const;
 };
 
 #endif // PROFILEMODEL_H

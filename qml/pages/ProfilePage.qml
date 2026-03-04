@@ -12,6 +12,7 @@ ScrollView {
     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
     property string saveMessage: ""
+    property bool saveError: false
     property bool authFormVisible: false
     property bool registerMode: false
     property string authMessage: ""
@@ -28,12 +29,25 @@ ScrollView {
         target: appContext
         function onLoggedInChanged() {
             root.saveMessage = ""
+            root.saveError = false
             root.authFormVisible = false
             root.authMessage = ""
             root.authError = false
             if (appContext && appContext.loggedIn) {
                 profileModel.loadProfile()
             }
+        }
+    }
+
+    Connections {
+        target: profileModel
+        function onErrorOccurred(message) {
+            root.saveMessage = message
+            root.saveError = true
+        }
+        function onProfileUpdated() {
+            root.saveMessage = "Збережено"
+            root.saveError = false
         }
     }
 
@@ -49,7 +63,7 @@ ScrollView {
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXXL
             Layout.rightMargin: Theme.spacingXXL
-            Layout.preferredHeight: root.authFormVisible ? 600 : 300
+            Layout.preferredHeight: root.authFormVisible ? 660 : 300
             color: Qt.rgba(1, 1, 1, 0.02)
             border.width: 1
             border.color: Theme.borderLight
@@ -284,6 +298,7 @@ ScrollView {
                         width: parent.width
                         height: 50
                         placeholderText: "Email"
+                        inputMethodHints: Qt.ImhEmailCharactersOnly
                         placeholderTextColor: Theme.textMuted
                         color: Theme.textPrimary
                         font.family: Theme.fontBody.family
@@ -296,6 +311,35 @@ ScrollView {
                             color: guestEmailField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
                             border.width: 1
                             border.color: guestEmailField.activeFocus ? Theme.accentWhite : Theme.borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                            Behavior on border.color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
+                        }
+                    }
+
+                    TextField {
+                        id: guestPhoneField
+                        visible: root.registerMode
+                        width: parent.width
+                        height: 50
+                        placeholderText: "Телефон (+380XXXXXXXXX)"
+                        inputMethodHints: Qt.ImhDialableCharactersOnly
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 13
+                        leftPadding: Theme.spacingM
+                        rightPadding: Theme.spacingM
+                        selectionColor: Qt.rgba(1, 1, 1, 0.2)
+                        background: Rectangle {
+                            radius: Theme.radiusSoft
+                            color: guestPhoneField.activeFocus ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(1, 1, 1, 0.02)
+                            border.width: 1
+                            border.color: guestPhoneField.activeFocus ? Theme.accentWhite : Theme.borderLight
 
                             Behavior on color {
                                 ColorAnimation { duration: Theme.animationFast }
@@ -398,6 +442,7 @@ ScrollView {
                                                 guestFirstNameField.text,
                                                 guestLastNameField.text,
                                                 guestEmailField.text,
+                                                guestPhoneField.text,
                                                 guestPasswordField.text,
                                                 guestConfirmPasswordField.text)
                                 } else {
@@ -640,12 +685,11 @@ ScrollView {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    var ok = profileModel.updateProfile(
+                    profileModel.updateProfile(
                                 firstNameField.text,
                                 lastNameField.text,
                                 phoneField.text,
                                 profileModel.address)
-                    saveMessage = ok ? "Збережено" : "Помилка збереження"
                 }
             }
         }
@@ -689,7 +733,7 @@ ScrollView {
             Layout.topMargin: 12
             Layout.leftMargin: Theme.spacingXXL
             text: root.saveMessage
-            color: Theme.textSecondary
+            color: root.saveError ? Theme.error : Theme.success
             font.pixelSize: 12
         }
 

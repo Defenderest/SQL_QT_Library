@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QByteArray>
+#include <QJsonObject>
 #include <QMap>
 #include "../models/datatypes.h"
 
@@ -59,6 +60,8 @@ public:
     Q_INVOKABLE void clearCart();
     Q_INVOKABLE bool checkout(const QString& shippingAddress, const QString& paymentMethod);
     Q_INVOKABLE void startLiqPayCheckout(const QString& shippingAddress);
+    Q_INVOKABLE void verifyPendingLiqPayPayment(const QString& callbackUrl = QString());
+    Q_INVOKABLE void cancelPendingLiqPayCheckout();
 
 signals:
     void dbManagerChanged();
@@ -79,9 +82,22 @@ private:
     QList<CartItem> m_items;
     QString m_liqPayPublicKey;
     QString m_liqPayPrivateKey;
+    QString m_pendingLiqPayProviderOrderId;
+    QString m_pendingLiqPayShippingAddress;
+    double m_pendingLiqPayExpectedAmount = 0.0;
+    QString m_pendingLiqPayCurrency = "UAH";
+    int m_lastCheckoutOrderId = -1;
 
     void recalculateTotals();
-    QString buildLiqPayCheckoutUrl(const QString& shippingAddress, const QString& orderId) const;
+    QString buildLiqPayCheckoutUrl(const QString& shippingAddress,
+                                  const QString& orderId,
+                                  QString* outDataBase64 = nullptr,
+                                  QString* outSignature = nullptr) const;
+    bool isSuccessfulLiqPayStatus(const QString& status) const;
+    bool verifyLiqPayCallbackSignature(const QString& dataBase64, const QString& signature) const;
+    QJsonObject requestLiqPayStatus(const QString& providerOrderId, QString* errorMessage) const;
+    void clearPendingLiqPayState();
+    static QString normalizeBase64QueryValue(QString value);
     static QByteArray buildLiqPaySignature(const QString& privateKey, const QByteArray& dataBase64);
 };
 

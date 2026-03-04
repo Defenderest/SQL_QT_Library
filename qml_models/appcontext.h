@@ -32,7 +32,6 @@ public:
     Q_INVOKABLE void navigateToBookDetails(int bookId);
     Q_INVOKABLE void navigateToAuthorDetails(int authorId);
     Q_INVOKABLE void showOrderDetails(int orderId);
-    Q_INVOKABLE void checkout();
     Q_INVOKABLE void editProfile();
     Q_INVOKABLE void logout();
     Q_INVOKABLE void login(int customerId);
@@ -41,11 +40,13 @@ public:
     Q_INVOKABLE bool registerWithCredentials(const QString& firstName,
                                              const QString& lastName,
                                              const QString& email,
+                                             const QString& phone,
                                              const QString& password,
                                              const QString& confirmPassword);
     
     // AI Chat support methods
     Q_INVOKABLE QString getBooksCatalogForAI();
+    Q_INVOKABLE QVariantList getSearchSuggestions(const QString& query, int limit = 8) const;
 
 signals:
     void currentCustomerIdChanged();
@@ -57,7 +58,6 @@ signals:
     void navigateToBookDetailsRequested(int bookId);
     void navigateToAuthorDetailsRequested(int authorId);
     void showOrderDetailsRequested(int orderId);
-    void checkoutRequested();
     void editProfileRequested();
     void logoutRequested();
     void loginRequested();
@@ -71,6 +71,11 @@ private:
     bool m_isAdmin = false;
     QString m_authError;
 
+    bool isValidName(const QString& value) const;
+    bool isValidEmail(const QString& value) const;
+    bool isValidPhone(const QString& value) const;
+    bool isStrongPassword(const QString& value) const;
+    QString normalizePhone(const QString& value) const;
     void setAuthError(const QString& message);
 };
 

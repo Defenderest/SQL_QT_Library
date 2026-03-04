@@ -113,11 +113,11 @@ LIMIT :limit;
 -- name: GetSearchSuggestions
 SELECT 'book' AS type, book_id AS id, title AS display_text, cover_image_path AS image_path, price
 FROM book
-WHERE LOWER(title) LIKE LOWER(:prefix) || '%'
+WHERE LOWER(title) LIKE '%' || LOWER(:prefix) || '%'
 UNION ALL
 SELECT 'author' AS type, author_id AS id, first_name || ' ' || last_name AS display_text, image_path, 0.0 AS price
 FROM author
-WHERE LOWER(first_name || ' ' || last_name) LIKE LOWER(:prefix) || '%'
+WHERE LOWER(first_name || ' ' || last_name) LIKE '%' || LOWER(:prefix) || '%'
 ORDER BY display_text
 LIMIT :total_limit;
 

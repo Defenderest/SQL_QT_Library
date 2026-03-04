@@ -62,7 +62,22 @@ public:
 
     bool updateCustomerPhone(int customerId, const QString &newPhone);
 
+    bool updateCustomerPasswordHash(int customerId, const QString& passwordHash);
+
     bool updateCustomerName(int customerId, const QString &firstName, const QString &lastName);
+
+    bool createPaymentTransaction(const PaymentTransactionCreateInfo& info, int& paymentTransactionId);
+    PaymentTransactionRecord getPaymentTransactionByProviderOrderId(const QString& providerOrderId) const;
+    bool updatePaymentTransactionStatus(const QString& providerOrderId,
+                                        const QString& status,
+                                        const QString& responseDataBase64 = QString(),
+                                        const QString& responseSignature = QString(),
+                                        const QString& providerPaymentId = QString(),
+                                        bool markVerified = false);
+    bool appendPaymentStatusHistory(const QString& providerOrderId,
+                                    const QString& status,
+                                    const QString& details = QString());
+    bool linkPaymentTransactionToOrder(const QString& providerOrderId, int orderId);
 
     // Customer statistics
     int getCustomerOrdersCount(int customerId) const;

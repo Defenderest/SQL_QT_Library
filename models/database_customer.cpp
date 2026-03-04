@@ -4,8 +4,9 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
-#include <QCryptographicHash>
 #include <QDate>
+
+#include "../utils/password_utils.h"
 
 CustomerLoginInfo DatabaseManager::getCustomerLoginInfo(const QString &email) const
 {
@@ -113,8 +114,11 @@ bool DatabaseManager::registerCustomer(const CustomerRegistrationInfo &regInfo, 
         return false;
     }
 
-    QByteArray passwordHashBytes = QCryptographicHash::hash(regInfo.password.toUtf8(), QCryptographicHash::Sha256);
-    QString passwordHashHex = QString::fromUtf8(passwordHashBytes.toHex());
+    const QString passwordHash = createPasswordHash(regInfo.password);
+    if (passwordHash.isEmpty()) {
+        qCritical() << "Неможливо зареєструвати користувача: не вдалося згенерувати хеш пароля.";
+        return false;
+    }
 
     const QString sql = getSqlQuery("RegisterCustomer");
     if (sql.isEmpty()) {
@@ -130,7 +134,8 @@ bool DatabaseManager::registerCustomer(const CustomerRegistrationInfo &regInfo, 
     query.bindValue(":first_name", regInfo.firstName);
     query.bindValue(":last_name", regInfo.lastName);
     query.bindValue(":email", regInfo.email);
-    query.bindValue(":password_hash", passwordHashHex);
+    query.bindValue(":phone", regInfo.phone.trimmed().isEmpty() ? QVariant(QVariant::String) : regInfo.phone.trimmed());
+    query.bindValue(":password_hash", passwordHash);
 
     qInfo() << "Виконання SQL 'RegisterCustomer' для email:" << regInfo.email;
 
@@ -151,6 +156,36 @@ bool DatabaseManager::registerCustomer(const CustomerRegistrationInfo &regInfo, 
         }
         return false;
     }
+}
+
+bool DatabaseManager::updateCustomerPasswordHash(int customerId, const QString& passwordHash)
+{
+    if (!m_isConnected || !m_db.isOpen() || customerId <= 0 || passwordHash.trimmed().isEmpty()) {
+        qWarning() << "Неможливо оновити хеш пароля: некоректні дані або немає з'єднання.";
+        return false;
+    }
+
+    const QString sql = getSqlQuery("UpdateCustomerPasswordHash");
+    if (sql.isEmpty()) {
+        qCritical() << "SQL запит 'UpdateCustomerPasswordHash' не знайдено.";
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+    if (!query.prepare(sql)) {
+        qCritical() << "Помилка підготовки запиту 'UpdateCustomerPasswordHash':" << query.lastError().text();
+        return false;
+    }
+
+    query.bindValue(":password_hash", passwordHash.trimmed());
+    query.bindValue(":customerId", customerId);
+    if (!query.exec()) {
+        qCritical() << "Помилка при виконанні 'UpdateCustomerPasswordHash' для customer ID" << customerId
+                    << ":" << query.lastError().text();
+        return false;
+    }
+
+    return query.numRowsAffected() > 0;
 }
 
 bool DatabaseManager::updateCustomerName(int customerId, const QString &firstName, const QString &lastName)

@@ -21,14 +21,33 @@ bool DatabaseManager::checkAndInitDatabase()
 {
     if (!m_isConnected) return false;
 
+    const auto readEnvBool = [](const char* name, bool fallback = false) {
+        if (!qEnvironmentVariableIsSet(name)) {
+            return fallback;
+        }
+
+        const QString value = qEnvironmentVariable(name).trimmed().toLower();
+        return value == QStringLiteral("1") ||
+               value == QStringLiteral("true") ||
+               value == QStringLiteral("yes") ||
+               value == QStringLiteral("on");
+    };
+
+    const bool allowSeedTestData = readEnvBool("LIBRARY_SEED_TEST_DATA", false);
+    const bool allowAutoAssignAdmin = readEnvBool("LIBRARY_AUTO_ASSIGN_ADMIN", false);
+
     QStringList tables = m_db.tables();
     // Простейшая проверка: если нет таблицы customer, считаем что БД пустая
     if (!tables.contains("customer", Qt::CaseInsensitive)) {
         qInfo() << "Database tables not found. Creating schema...";
         if (createSchemaTables()) {
-            qInfo() << "Schema created. Populating test data...";
-            if (!populateTestData(this, 30)) {
-                qWarning() << "Test data population failed during init.";
+            if (allowSeedTestData) {
+                qInfo() << "Schema created. Populating test data...";
+                if (!populateTestData(this, 30)) {
+                    qWarning() << "Test data population failed during init.";
+                }
+            } else {
+                qInfo() << "Schema created. Test data seeding is disabled (set LIBRARY_SEED_TEST_DATA=1 to enable).";
             }
             tables = m_db.tables();
         }
@@ -43,16 +62,65 @@ bool DatabaseManager::checkAndInitDatabase()
         qWarning() << "Failed to ensure customer.is_admin column:" << migrationQuery.lastError().text();
     }
 
+    if (!migrationQuery.exec("ALTER TABLE customer ALTER COLUMN password_hash TYPE TEXT;")) {
+        qWarning() << "Failed to ensure customer.password_hash type:" << migrationQuery.lastError().text();
+    }
+
     int adminCount = 0;
     if (migrationQuery.exec("SELECT COUNT(*) FROM customer WHERE COALESCE(is_admin, FALSE) = TRUE;") && migrationQuery.next()) {
         adminCount = migrationQuery.value(0).toInt();
     }
 
-    if (adminCount == 0) {
+    if (allowAutoAssignAdmin && adminCount == 0) {
         if (!migrationQuery.exec("UPDATE customer SET is_admin = TRUE WHERE customer_id = (SELECT customer_id FROM customer ORDER BY customer_id ASC LIMIT 1);")) {
             qWarning() << "Failed to assign default admin:" << migrationQuery.lastError().text();
         } else if (migrationQuery.numRowsAffected() > 0) {
             qInfo() << "Assigned admin role to the first customer account.";
+        }
+    } else if (!allowAutoAssignAdmin && adminCount == 0) {
+        qInfo() << "No admin accounts found. Auto-assignment disabled (set LIBRARY_AUTO_ASSIGN_ADMIN=1 to enable).";
+    }
+
+    const QStringList paymentMigrations = {
+        QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS payment_transaction ("
+            "payment_transaction_id SERIAL PRIMARY KEY, "
+            "provider VARCHAR(32) NOT NULL, "
+            "provider_order_id VARCHAR(128) NOT NULL UNIQUE, "
+            "customer_id INTEGER NOT NULL, "
+            "order_id INTEGER, "
+            "amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0), "
+            "currency VARCHAR(10) NOT NULL, "
+            "status VARCHAR(40) NOT NULL, "
+            "checkout_url TEXT, "
+            "request_data_base64 TEXT, "
+            "request_signature VARCHAR(255), "
+            "response_data_base64 TEXT, "
+            "response_signature VARCHAR(255), "
+            "provider_payment_id VARCHAR(128), "
+            "created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "verified_at TIMESTAMPTZ, "
+            "CONSTRAINT fk_payment_customer FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE, "
+            "CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES \"order\"(order_id) ON DELETE SET NULL"
+            ");"
+        ),
+        QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS payment_status_history ("
+            "payment_status_history_id SERIAL PRIMARY KEY, "
+            "payment_transaction_id INTEGER NOT NULL, "
+            "status VARCHAR(40) NOT NULL, "
+            "status_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "details TEXT, "
+            "CONSTRAINT fk_payment_transaction FOREIGN KEY (payment_transaction_id) REFERENCES payment_transaction(payment_transaction_id) ON DELETE CASCADE"
+            ");"
+        )
+    };
+
+    for (const QString& migrationSql : paymentMigrations) {
+        if (!migrationQuery.exec(migrationSql)) {
+            qWarning() << "Failed to ensure payment table:" << migrationQuery.lastError().text();
+            qWarning() << "SQL:" << migrationSql;
         }
     }
 
@@ -63,7 +131,9 @@ bool DatabaseManager::checkAndInitDatabase()
         "CREATE INDEX IF NOT EXISTS idx_comment_book_date ON comment (book_id, comment_date DESC);",
         "CREATE INDEX IF NOT EXISTS idx_book_genre_language ON book (genre, language);",
         "CREATE INDEX IF NOT EXISTS idx_book_title_lower ON book (LOWER(title));",
-        "CREATE INDEX IF NOT EXISTS idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));"
+        "CREATE INDEX IF NOT EXISTS idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));",
+        "CREATE INDEX IF NOT EXISTS idx_payment_transaction_provider_order ON payment_transaction (provider_order_id);",
+        "CREATE INDEX IF NOT EXISTS idx_payment_status_history_tx_date ON payment_status_history (payment_transaction_id, status_date DESC);"
     };
 
     for (const QString& indexSql : performanceIndexes) {
@@ -89,6 +159,8 @@ bool DatabaseManager::resetDatabase()
 
     // Видаляємо всі таблиці у правильному порядку (враховуючи зовнішні ключі)
     QStringList dropStatements = {
+        "DROP TABLE IF EXISTS payment_status_history CASCADE",
+        "DROP TABLE IF EXISTS payment_transaction CASCADE",
         "DROP TABLE IF EXISTS order_status CASCADE",
         "DROP TABLE IF EXISTS order_item CASCADE",
         "DROP TABLE IF EXISTS comment CASCADE",
@@ -196,6 +268,8 @@ bool DatabaseManager::createSchemaTables()
 
 
     // Drop tables
+    if(success) success &= executeQuery(query, getSqlQuery("DropPaymentStatusHistoryTable"), "Видалення payment_status_history");
+    if(success) success &= executeQuery(query, getSqlQuery("DropPaymentTransactionTable"), "Видалення payment_transaction");
     if(success) success &= executeQuery(query, getSqlQuery("DropOrderStatusTable"), "Видалення order_status");
     if(success) success &= executeQuery(query, getSqlQuery("DropOrderItemTable"),   "Видалення order_item");
     if(success) success &= executeQuery(query, getSqlQuery("DropCommentTable"),     "Видалення comment");
@@ -213,9 +287,11 @@ bool DatabaseManager::createSchemaTables()
     if(success) success &= executeQuery(query, getSqlQuery("CreateAuthorTable"), "Створення author");
     if(success) success &= executeQuery(query, getSqlQuery("CreateBookTable"), "Створення book");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderTable"), "Створення \"order\"");
+    if(success) success &= executeQuery(query, getSqlQuery("CreatePaymentTransactionTable"), "Створення payment_transaction");
     if(success) success &= executeQuery(query, getSqlQuery("CreateBookAuthorTable"), "Створення book_author");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderItemTable"), "Створення order_item");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderStatusTable"), "Створення order_status");
+    if(success) success &= executeQuery(query, getSqlQuery("CreatePaymentStatusHistoryTable"), "Створення payment_status_history");
     if(success) success &= executeQuery(query, getSqlQuery("CreateCommentTable"), "Створення comment");
     if(success) success &= executeQuery(query, getSqlQuery("CreateCartItemTable"), "Створення cart_item");
 
@@ -227,6 +303,8 @@ bool DatabaseManager::createSchemaTables()
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookGenreLanguage"), "Створення індексу idx_book_genre_language");
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookTitleLower"), "Створення індексу idx_book_title_lower");
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexAuthorFullNameLower"), "Створення індексу idx_author_full_name_lower");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexPaymentTransactionProviderOrder"), "Створення індексу idx_payment_transaction_provider_order");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexPaymentStatusHistoryTransactionDate"), "Створення індексу idx_payment_status_history_tx_date");
 
     // Create functions and triggers
     if(success) success &= executeQuery(query, getSqlQuery("CreateCalculateAverageRatingFunction"), "Створення функції calculate_average_book_rating");

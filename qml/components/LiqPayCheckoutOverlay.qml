@@ -9,10 +9,61 @@ Popup {
     id: root
 
     property string checkoutUrl: ""
+    property bool slowLoading: false
+    property bool resultCallbackHandled: false
 
-    signal paymentSucceeded()
+    signal verifyRequested()
+    signal paymentReturnDetected(string callbackUrl)
     signal paymentCanceled()
     signal overlayClosed()
+
+    function currentWebView() {
+        return (webLoader && webLoader.item) ? webLoader.item : null
+    }
+
+    function decodeQueryParam(urlValue, name) {
+        var escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        var regex = new RegExp("[?&]" + escapedName + "=([^&]+)")
+        var match = regex.exec(urlValue || "")
+        return match && match.length > 1 ? decodeURIComponent(match[1]) : ""
+    }
+
+    function htmlEscape(value) {
+        return (value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#39;")
+    }
+
+    function loadCheckoutPage() {
+        if (!root.checkoutUrl || root.checkoutUrl.length === 0)
+            return
+
+        var webView = currentWebView()
+        if (!webView)
+            return
+
+        root.slowLoading = false
+        root.resultCallbackHandled = false
+
+        var dataParam = decodeQueryParam(root.checkoutUrl, "data")
+        var signatureParam = decodeQueryParam(root.checkoutUrl, "signature")
+
+        if (dataParam.length > 0 && signatureParam.length > 0) {
+            var html = "<!doctype html><html><head><meta charset='utf-8'></head><body style='background:#030303;margin:0;'>"
+                     + "<form id='liqpay' method='POST' action='https://www.liqpay.ua/api/3/checkout'>"
+                     + "<input type='hidden' name='data' value='" + htmlEscape(dataParam) + "'>"
+                     + "<input type='hidden' name='signature' value='" + htmlEscape(signatureParam) + "'>"
+                     + "</form><script>document.getElementById('liqpay').submit();</script></body></html>"
+            webView.loadHtml(html, "https://www.liqpay.ua/")
+        } else {
+            webView.url = root.checkoutUrl
+        }
+
+        slowLoadTimer.restart()
+    }
 
     parent: Overlay.overlay
     x: 0
@@ -29,12 +80,29 @@ Popup {
     }
 
     onClosed: overlayClosed()
+    onOpened: loadCheckoutPage()
+    onCheckoutUrlChanged: {
+        if (root.visible)
+            loadCheckoutPage()
+    }
 
     WebEngineProfile {
         id: liqPayProfile
-        offTheRecord: true
-        httpCacheType: WebEngineProfile.MemoryHttpCache
-        persistentCookiesPolicy: WebEngineProfile.NoPersistentCookies
+        offTheRecord: false
+        storageName: "liqpay_checkout"
+        httpCacheType: WebEngineProfile.DiskHttpCache
+        persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
+    }
+
+    Timer {
+        id: slowLoadTimer
+        interval: 10000
+        repeat: false
+        onTriggered: {
+            var webView = root.currentWebView()
+            if (webView && (webView.loading || webView.loadProgress < 100))
+                root.slowLoading = true
+        }
     }
 
     ColumnLayout {
@@ -72,24 +140,29 @@ Popup {
 
                 Item { Layout.fillWidth: true }
 
+                Label {
+                    visible: root.slowLoading
+                    text: "Завантаження довше звичайного"
+                    color: Theme.warning
+                    font.family: Theme.fontBody.family
+                    font.pixelSize: 11
+                }
+
                 Button {
-                    id: successButton
-                    text: "Оплату виконано"
-                    onClicked: {
-                        root.paymentSucceeded()
-                        root.close()
-                    }
+                    id: verifyButton
+                    text: "Перевірити оплату"
+                    onClicked: root.verifyRequested()
 
                     background: Rectangle {
                         radius: Theme.radiusRound
                         border.width: 1
                         border.color: Theme.accentWhite
-                        color: successButton.hovered ? Theme.accentWhite : "transparent"
+                        color: verifyButton.hovered ? Theme.accentWhite : "transparent"
                     }
 
                     contentItem: Label {
-                        text: successButton.text
-                        color: successButton.hovered ? Theme.bgBody : Theme.textPrimary
+                        text: verifyButton.text
+                        color: verifyButton.hovered ? Theme.bgBody : Theme.textPrimary
                         font.family: Theme.fontBody.family
                         font.pixelSize: 11
                         font.capitalization: Font.AllUppercase
@@ -132,9 +205,15 @@ Popup {
             id: webLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            active: root.visible
-            asynchronous: true
+            active: true
+            asynchronous: false
             sourceComponent: webComponent
+
+            onStatusChanged: {
+                if (status === Loader.Ready && root.visible && root.checkoutUrl.length > 0) {
+                    root.loadCheckoutPage()
+                }
+            }
         }
     }
 
@@ -143,7 +222,7 @@ Popup {
 
         WebEngineView {
             id: liqPayWeb
-            url: root.checkoutUrl
+            url: "about:blank"
             profile: liqPayProfile
             focus: true
 
@@ -151,21 +230,59 @@ Popup {
             settings.pluginsEnabled: false
             settings.fullScreenSupportEnabled: true
             settings.autoLoadImages: true
+            settings.webGLEnabled: false
+            settings.accelerated2dCanvasEnabled: false
+
+            Rectangle {
+                anchors.fill: parent
+                visible: liqPayWeb.loading
+                color: Theme.bgBody
+                z: 2
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: Theme.spacingM
+
+                    BusyIndicator {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        running: liqPayWeb.loading
+                    }
+
+                    Label {
+                        text: "Завантаження сторінки LiqPay..."
+                        color: Theme.textSecondary
+                        font.family: Theme.fontBody.family
+                        font.pixelSize: 12
+                    }
+                }
+            }
 
             onLoadingChanged: function(loadRequest) {
+                var status = loadRequest ? loadRequest.status : -1
+
+                if (status === 2) { // LoadSucceededStatus
+                    root.slowLoading = false
+                    slowLoadTimer.stop()
+                }
+
+                if (status === 3) { // LoadFailedStatus
+                    root.slowLoading = true
+                    slowLoadTimer.stop()
+                }
+
                 var current = liqPayWeb.url.toString()
                 if (current.indexOf("liqpay.local/result") !== -1) {
-                    var lower = current.toLowerCase()
-                    if (lower.indexOf("status=success") !== -1 ||
-                        lower.indexOf("status=sandbox") !== -1 ||
-                        lower.indexOf("status=processing") !== -1 ||
-                        lower.indexOf("status=wait_accept") !== -1) {
-                        root.paymentSucceeded()
-                    } else {
-                        root.paymentCanceled()
+                    if (!root.resultCallbackHandled) {
+                        root.resultCallbackHandled = true
+                        root.paymentReturnDetected(current)
                     }
-                    root.close()
+                    slowLoadTimer.stop()
+                    root.slowLoading = false
                 }
+            }
+
+            onRenderProcessTerminated: function(terminationStatus, exitCode) {
+                console.warn("LiqPay WebEngine render process terminated", terminationStatus, exitCode)
             }
         }
     }

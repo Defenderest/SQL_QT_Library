@@ -10,7 +10,8 @@
 #include <QSet>
 #include <QSqlRecord>
 #include <QMap>
-#include <QCryptographicHash>
+
+#include "password_utils.h"
 
 
 QDate randomDate(const QDate &minDate, const QDate &maxDate) {
@@ -365,10 +366,8 @@ bool populateTestData(DatabaseManager *dbManager, int numberOfRecords)
                 query.bindValue(":join_date", randomDate(QDate::currentDate().addYears(-5), QDate::currentDate()));
                 query.bindValue(":loyalty_points", QRandomGenerator::global()->bounded(0, 501));
 
-                QString plainPassword = "password" + query.boundValue(":email").toString();
-                QByteArray passwordHashBytes = QCryptographicHash::hash(plainPassword.toUtf8(), QCryptographicHash::Sha256);
-                QString passwordHashHex = QString::fromUtf8(passwordHashBytes.toHex());
-                query.bindValue(":password_hash", passwordHashHex);
+                const QString plainPassword = "password" + query.boundValue(":email").toString();
+                query.bindValue(":password_hash", createPasswordHash(plainPassword));
 
                 if (dbManager->executeInsertQuery(query, QString("Customer %1").arg(i+1), lastId)) {
                     customerIds.append(lastId.toInt());

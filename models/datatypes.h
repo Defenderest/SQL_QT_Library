@@ -62,7 +62,32 @@ struct CustomerRegistrationInfo {
     QString firstName;
     QString lastName;
     QString email;
+    QString phone;
     QString password;
+};
+
+struct PaymentTransactionCreateInfo {
+    int customerId = -1;
+    QString provider;
+    QString providerOrderId;
+    double amount = 0.0;
+    QString currency;
+    QString status;
+    QString checkoutUrl;
+    QString requestDataBase64;
+    QString requestSignature;
+};
+
+struct PaymentTransactionRecord {
+    int paymentTransactionId = -1;
+    int customerId = -1;
+    int orderId = -1;
+    QString provider;
+    QString providerOrderId;
+    double amount = 0.0;
+    QString currency;
+    QString status;
+    bool found = false;
 };
 
 struct OrderItemDisplayInfo {

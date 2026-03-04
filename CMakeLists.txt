@@ -23,12 +23,13 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Sql Widgets Quick Qu
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/dialogs
     ${CMAKE_CURRENT_SOURCE_DIR}/models
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/widgets
     ${CMAKE_CURRENT_SOURCE_DIR}/qml_models
 )
+
+set(APP_TARGET Library)
 
 # --- Список исходных файлов ---
 set(PROJECT_SOURCES
@@ -43,6 +44,7 @@ set(PROJECT_SOURCES
     models/database_comment.cpp
     models/database_cart.cpp
     models/database_admin.cpp
+    models/database_payment.cpp
     models/datatypes.h
     # QML Models
     qml_models/appcontext.cpp
@@ -58,11 +60,10 @@ set(PROJECT_SOURCES
     qml_models/theme.cpp
     qml_models/geminiclient.h
     qml_models/geminiclient.cpp
-    # Dialogs
-    dialogs/logindialog.cpp
-    dialogs/logindialog.h
     utils/testdata.cpp
     utils/testdata.h
+    utils/password_utils.cpp
+    utils/password_utils.h
     utils/searchsuggestiondelegate.cpp
     utils/searchsuggestiondelegate.h
     widgets/starratingwidget.cpp
@@ -73,7 +74,7 @@ set(PROJECT_SOURCES
 
 # --- Создание исполняемого файла ---
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(untitled
+    qt_add_executable(${APP_TARGET}
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         resourses.qrc
@@ -81,13 +82,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     )
 else()
     if(ANDROID)
-        add_library(untitled SHARED
+        add_library(${APP_TARGET} SHARED
             ${PROJECT_SOURCES}
             resourses.qrc
             qml/qml.qrc
         )
     else()
-        add_executable(untitled
+        add_executable(${APP_TARGET}
             ${PROJECT_SOURCES}
             resourses.qrc
             qml/qml.qrc
@@ -96,7 +97,7 @@ else()
 endif()
 
 # --- Линковка с библиотеками Qt ---
-target_link_libraries(untitled PRIVATE
+target_link_libraries(${APP_TARGET} PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Sql
     Qt${QT_VERSION_MAJOR}::Widgets
@@ -107,7 +108,7 @@ target_link_libraries(untitled PRIVATE
 )
 
 # --- Копирование SQL файлов в директорию сборки ---
-add_custom_command(TARGET untitled POST_BUILD
+add_custom_command(TARGET ${APP_TARGET} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/sql
     ${CMAKE_CURRENT_BINARY_DIR}/sql
@@ -116,9 +117,9 @@ add_custom_command(TARGET untitled POST_BUILD
 
 # --- Настройки для платформ ---
 if(${QT_VERSION} VERSION_LESS 6.1.0 AND (APPLE OR CMAKE_SYSTEM_NAME STREQUAL "iOS"))
-    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.untitled)
+    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.library)
 endif()
-set_target_properties(untitled PROPERTIES
+set_target_properties(${APP_TARGET} PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
@@ -128,7 +129,7 @@ set_target_properties(untitled PROPERTIES
 
 # --- Установка ---
 include(GNUInstallDirs)
-install(TARGETS untitled
+install(TARGETS ${APP_TARGET}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -143,6 +144,7 @@ install(FILES
     sql/comment_queries.sql
     sql/customer_queries.sql
     sql/order_queries.sql
+    sql/payment_queries.sql
     sql/functions/calculate_average_rating.sql
     sql/award_loyalty_trigger.sql
     DESTINATION ${CMAKE_INSTALL_BINDIR}/sql
@@ -150,5 +152,5 @@ install(FILES
 
 # --- Финализация для Qt 6 ---
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(untitled)
+    qt_finalize_executable(${APP_TARGET})
 endif()

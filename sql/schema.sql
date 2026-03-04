@@ -1,6 +1,12 @@
 -- name: DropOrderStatusTable
 DROP TABLE IF EXISTS order_status CASCADE;
 
+-- name: DropPaymentStatusHistoryTable
+DROP TABLE IF EXISTS payment_status_history CASCADE;
+
+-- name: DropPaymentTransactionTable
+DROP TABLE IF EXISTS payment_transaction CASCADE;
+
 -- name: DropOrderItemTable
 DROP TABLE IF EXISTS order_item CASCADE;
 
@@ -32,7 +38,7 @@ DROP TABLE IF EXISTS customer CASCADE;
 CREATE TABLE customer (
     customer_id SERIAL PRIMARY KEY, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL, phone VARCHAR(30), address TEXT,
-    password_hash VARCHAR(64) NOT NULL,
+    password_hash TEXT NOT NULL,
     loyalty_program BOOLEAN DEFAULT FALSE, join_date DATE NOT NULL DEFAULT CURRENT_DATE,
     loyalty_points INTEGER DEFAULT 0 CHECK (loyalty_points >= 0),
     is_admin BOOLEAN NOT NULL DEFAULT FALSE
@@ -68,6 +74,29 @@ CREATE TABLE "order" (
     CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE SET NULL
 );
 
+-- name: CreatePaymentTransactionTable
+CREATE TABLE payment_transaction (
+    payment_transaction_id SERIAL PRIMARY KEY,
+    provider VARCHAR(32) NOT NULL,
+    provider_order_id VARCHAR(128) NOT NULL UNIQUE,
+    customer_id INTEGER NOT NULL,
+    order_id INTEGER,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+    currency VARCHAR(10) NOT NULL,
+    status VARCHAR(40) NOT NULL,
+    checkout_url TEXT,
+    request_data_base64 TEXT,
+    request_signature VARCHAR(255),
+    response_data_base64 TEXT,
+    response_signature VARCHAR(255),
+    provider_payment_id VARCHAR(128),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    verified_at TIMESTAMPTZ,
+    CONSTRAINT fk_payment_customer FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE,
+    CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE SET NULL
+);
+
 -- name: CreateBookAuthorTable
 CREATE TABLE book_author (
     book_id INTEGER NOT NULL, author_id INTEGER NOT NULL, role VARCHAR(100),
@@ -89,6 +118,16 @@ CREATE TABLE order_status (
     order_status_id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL, status VARCHAR(50) NOT NULL,
     status_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, tracking_number VARCHAR(100),
     CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE CASCADE
+);
+
+-- name: CreatePaymentStatusHistoryTable
+CREATE TABLE payment_status_history (
+    payment_status_history_id SERIAL PRIMARY KEY,
+    payment_transaction_id INTEGER NOT NULL,
+    status VARCHAR(40) NOT NULL,
+    status_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    details TEXT,
+    CONSTRAINT fk_payment_transaction FOREIGN KEY (payment_transaction_id) REFERENCES payment_transaction(payment_transaction_id) ON DELETE CASCADE
 );
 
 -- name: CreateCommentTable
@@ -134,3 +173,9 @@ CREATE INDEX idx_book_title_lower ON book (LOWER(title));
 
 -- name: CreateIndexAuthorFullNameLower
 CREATE INDEX idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));
+
+-- name: CreateIndexPaymentTransactionProviderOrder
+CREATE INDEX idx_payment_transaction_provider_order ON payment_transaction (provider_order_id);
+
+-- name: CreateIndexPaymentStatusHistoryTransactionDate
+CREATE INDEX idx_payment_status_history_tx_date ON payment_status_history (payment_transaction_id, status_date DESC);

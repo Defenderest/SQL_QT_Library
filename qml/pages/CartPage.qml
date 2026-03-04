@@ -12,6 +12,34 @@ ScrollView {
     property string liqPayCheckoutUrl: ""
     property string pendingCheckoutAddress: ""
     property bool compactCheckout: root.availableWidth < 980
+    property bool shippingAddressTouched: false
+
+    function validateShippingAddress(value) {
+        var address = (value || "").trim()
+        if (address.length === 0)
+            return "Вкажіть адресу доставки"
+        if (address.length < 8)
+            return "Адреса занадто коротка"
+        if (address.length > 180)
+            return "Адреса занадто довга"
+        if (!/[A-Za-zА-Яа-яІіЇїЄєҐґ]/.test(address))
+            return "Адреса має містити назву вулиці"
+        if (!/[0-9]/.test(address))
+            return "Вкажіть номер будинку"
+        if (!/^[0-9A-Za-zА-Яа-яІіЇїЄєҐґ\s.,'"\-\/()]+$/.test(address))
+            return "Адреса містить недопустимі символи"
+        return ""
+    }
+
+    function addressErrorMessage() {
+        if (!shippingAddressTouched)
+            return ""
+        return validateShippingAddress(shippingAddressInput.text)
+    }
+
+    function isAddressValid() {
+        return validateShippingAddress(shippingAddressInput.text).length === 0
+    }
 
     function openLiqPayOverlay() {
         liqPayOverlayLoader.active = true
@@ -33,8 +61,14 @@ ScrollView {
             root.checkoutError = false
             root.checkoutMessage = "Замовлення #" + orderId + " успішно оформлено"
             root.checkoutStep = false
+            root.shippingAddressTouched = false
             shippingAddressInput.text = ""
             paymentMethodInput.currentIndex = 0
+            if (liqPayOverlayLoader.item && liqPayOverlayLoader.item.visible) {
+                liqPayOverlayLoader.item.close()
+            }
+            root.pendingCheckoutAddress = ""
+            root.liqPayCheckoutUrl = ""
             ordersModel.loadOrders()
         }
 
@@ -461,7 +495,9 @@ ScrollView {
                                         Layout.preferredHeight: 48
                                         radius: Theme.radiusSoft
                                         color: Qt.rgba(1, 1, 1, 0.02)
-                                        border.color: shippingAddressInput.activeFocus ? Theme.borderHover : Theme.borderLight
+                                        border.color: root.addressErrorMessage().length > 0
+                                                      ? Theme.error
+                                                      : (shippingAddressInput.activeFocus ? Theme.borderHover : Theme.borderLight)
                                         border.width: 1
 
                                         Behavior on border.color {
@@ -479,7 +515,24 @@ ScrollView {
                                             placeholderText: "Вул. Прикладна, 1"
                                             placeholderTextColor: Theme.textMuted
                                             background: Rectangle { color: "transparent" }
+                                            onTextChanged: {
+                                                if (root.shippingAddressTouched && root.checkoutError && root.checkoutMessage.length > 0) {
+                                                    root.checkoutMessage = ""
+                                                    root.checkoutError = false
+                                                }
+                                            }
+                                            onEditingFinished: root.shippingAddressTouched = true
                                         }
+                                    }
+
+                                    Label {
+                                        Layout.fillWidth: true
+                                        visible: root.addressErrorMessage().length > 0
+                                        text: root.addressErrorMessage()
+                                        color: Theme.error
+                                        font.family: Theme.fontBody.family
+                                        font.pixelSize: 11
+                                        wrapMode: Text.WordWrap
                                     }
                                 }
 
@@ -608,7 +661,7 @@ ScrollView {
                                 border.color: Theme.accentWhite
                                 border.width: 1
                                 radius: Theme.radiusRound
-                                enabled: cartModel.totalItems > 0 && shippingAddressInput.text.trim().length > 0
+                                enabled: cartModel.totalItems > 0 && root.isAddressValid()
                                 opacity: enabled ? 1.0 : 0.45
 
                                 Behavior on color {
@@ -636,6 +689,15 @@ ScrollView {
                                     onClicked: {
                                         root.checkoutMessage = ""
                                         root.checkoutError = false
+                                        root.shippingAddressTouched = true
+
+                                        var addressError = root.validateShippingAddress(shippingAddressInput.text)
+                                        if (addressError.length > 0) {
+                                            root.checkoutError = true
+                                            root.checkoutMessage = addressError
+                                            return
+                                        }
+
                                         if (paymentMethodInput.currentText === "LiqPay Sandbox") {
                                             root.pendingCheckoutAddress = shippingAddressInput.text.trim()
                                             cartModel.startLiqPayCheckout(root.pendingCheckoutAddress)
@@ -665,8 +727,8 @@ ScrollView {
 
     Loader {
         id: liqPayOverlayLoader
-        active: false
-        asynchronous: true
+        active: true
+        asynchronous: false
         source: "qrc:/components/LiqPayCheckoutOverlay.qml"
 
         onStatusChanged: {
@@ -681,17 +743,20 @@ ScrollView {
         target: liqPayOverlayLoader.item
         ignoreUnknownSignals: true
 
-        function onPaymentSucceeded() {
-            if (root.pendingCheckoutAddress.length === 0) {
-                root.checkoutError = true
-                root.checkoutMessage = "Не знайдено адресу доставки для оформлення"
-                return
-            }
-            cartModel.checkout(root.pendingCheckoutAddress, "LiqPay Sandbox")
-            root.pendingCheckoutAddress = ""
+        function onVerifyRequested() {
+            root.checkoutError = false
+            root.checkoutMessage = "Перевіряємо статус платежу..."
+            cartModel.verifyPendingLiqPayPayment("")
+        }
+
+        function onPaymentReturnDetected(callbackUrl) {
+            root.checkoutError = false
+            root.checkoutMessage = "Перевіряємо підпис і статус платежу..."
+            cartModel.verifyPendingLiqPayPayment(callbackUrl)
         }
 
         function onPaymentCanceled() {
+            cartModel.cancelPendingLiqPayCheckout()
             root.checkoutError = true
             root.checkoutMessage = "Оплату LiqPay скасовано"
             root.pendingCheckoutAddress = ""
@@ -699,7 +764,6 @@ ScrollView {
 
         function onOverlayClosed() {
             root.liqPayCheckoutUrl = ""
-            liqPayOverlayLoader.active = false
         }
     }
 }

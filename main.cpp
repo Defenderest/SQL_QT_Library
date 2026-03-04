@@ -10,6 +10,17 @@
 #include <QLabel>
 #include <QTimer>
 #include <QByteArray>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QTextStream>
+#include <QStringList>
+
+#if __has_include(<QtWebEngineQuick/qtwebenginequickglobal.h>)
+#include <QtWebEngineQuick/qtwebenginequickglobal.h>
+#elif __has_include(<QtWebEngineQuick/QtWebEngineQuick>)
+#include <QtWebEngineQuick/QtWebEngineQuick>
+#endif
 
 #include "database.h"
 
@@ -29,16 +40,11 @@
 int main(int argc, char *argv[])
 {
     QByteArray chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
-    if (!chromiumFlags.isEmpty()) {
-        chromiumFlags += ' ';
+    if (chromiumFlags.trimmed().isEmpty()) {
+        chromiumFlags = "--disable-background-timer-throttling "
+                        "--disable-renderer-backgrounding "
+                        "--disable-backgrounding-occluded-windows";
     }
-    chromiumFlags += "--ignore-gpu-blocklist "
-                     "--enable-gpu-rasterization "
-                     "--enable-zero-copy "
-                     "--num-raster-threads=4 "
-                     "--disable-background-timer-throttling "
-                     "--disable-renderer-backgrounding "
-                     "--disable-backgrounding-occluded-windows";
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
 
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -46,13 +52,167 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/icons/icons/app_icon.png"));
-    app.setApplicationName("Bookstore");
+    app.setApplicationName("Library");
     app.setOrganizationName("Patsera_Ihor");
     app.setApplicationVersion("1.0");
 
+    QtWebEngineQuick::initialize();
+
+    const auto normalizeSecretValue = [](const QString& rawValue) {
+        QString value = rawValue.trimmed();
+        if (value.length() >= 2) {
+            const QChar first = value.front();
+            const QChar last = value.back();
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                value = value.mid(1, value.length() - 2).trimmed();
+            }
+        }
+        return value;
+    };
+
+    const auto setEnvFromCliArg = [&](const QString& prefix, const char* envName) {
+        const QStringList args = QCoreApplication::arguments();
+        for (const QString& arg : args) {
+            if (arg.startsWith(prefix)) {
+                const QString value = normalizeSecretValue(arg.mid(prefix.length()));
+                if (!value.isEmpty()) {
+                    qputenv(envName, value.toUtf8());
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    setEnvFromCliArg("--liqpay-public-key=", "LIQPAY_PUBLIC_KEY");
+    setEnvFromCliArg("--liqpay-private-key=", "LIQPAY_PRIVATE_KEY");
+
+    const auto loadDotEnvFile = [&](const QString& filePath) {
+        QFile file(filePath);
+        if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            return false;
+        }
+
+        QTextStream stream(&file);
+        bool loadedAny = false;
+        int lineNumber = 0;
+        while (!stream.atEnd()) {
+            QString line = stream.readLine();
+            ++lineNumber;
+
+            if (lineNumber == 1 && !line.isEmpty() && line.at(0) == QChar(0xFEFF)) {
+                line.remove(0, 1);
+            }
+
+            line = line.trimmed();
+            if (line.isEmpty() || line.startsWith('#')) {
+                continue;
+            }
+
+            if (line.startsWith("export ")) {
+                line = line.mid(7).trimmed();
+            }
+
+            const int separatorIndex = line.indexOf('=');
+            if (separatorIndex <= 0) {
+                continue;
+            }
+
+            const QString key = line.left(separatorIndex).trimmed();
+            if (key.isEmpty()) {
+                continue;
+            }
+
+            const QString value = normalizeSecretValue(line.mid(separatorIndex + 1));
+            if (value.isEmpty()) {
+                continue;
+            }
+
+            const QByteArray keyBytes = key.toUtf8();
+            if (qEnvironmentVariableIsSet(keyBytes.constData()) &&
+                !qEnvironmentVariable(keyBytes.constData()).trimmed().isEmpty()) {
+                continue;
+            }
+
+            qputenv(keyBytes, value.toUtf8());
+            loadedAny = true;
+        }
+
+        return loadedAny;
+    };
+
+    QStringList dotEnvCandidates;
+    dotEnvCandidates << QDir::current().filePath(".env");
+    dotEnvCandidates << QDir(QCoreApplication::applicationDirPath()).filePath(".env");
+    dotEnvCandidates << QFileInfo(QDir(QCoreApplication::applicationDirPath()).filePath("../.env")).absoluteFilePath();
+    for (const QString& candidate : dotEnvCandidates) {
+        loadDotEnvFile(candidate);
+    }
+
+    const auto readFirstEnvOrDefault = [&](const QStringList& names, const QString& fallback = QString()) {
+        for (const QString& name : names) {
+            const QByteArray key = name.toUtf8();
+            const QString value = normalizeSecretValue(qEnvironmentVariable(key.constData()));
+            if (!value.isEmpty()) {
+                return value;
+            }
+        }
+        return fallback;
+    };
+
+    const auto readEnvIntOrDefault = [&](const QStringList& names, int fallback) {
+        for (const QString& name : names) {
+            const QByteArray key = name.toUtf8();
+            const QString value = normalizeSecretValue(qEnvironmentVariable(key.constData()));
+            if (value.isEmpty()) {
+                continue;
+            }
+
+            bool ok = false;
+            const int parsed = value.toInt(&ok);
+            if (ok && parsed > 0) {
+                return parsed;
+            }
+        }
+        return fallback;
+    };
+
+    const QString dbHost = readFirstEnvOrDefault({QStringLiteral("DB_HOST"), QStringLiteral("PGHOST")});
+    const int dbPort = readEnvIntOrDefault({QStringLiteral("DB_PORT"), QStringLiteral("PGPORT")}, -1);
+    const QString dbName = readFirstEnvOrDefault({QStringLiteral("DB_NAME"), QStringLiteral("PGDATABASE")});
+    const QString dbUser = readFirstEnvOrDefault({QStringLiteral("DB_USER"), QStringLiteral("PGUSER")});
+    const QString dbPassword = readFirstEnvOrDefault({QStringLiteral("DB_PASSWORD"), QStringLiteral("PGPASSWORD")});
+
+    QStringList missingDbVars;
+    if (dbHost.isEmpty()) {
+        missingDbVars << QStringLiteral("DB_HOST or PGHOST");
+    }
+    if (dbPort <= 0) {
+        missingDbVars << QStringLiteral("DB_PORT or PGPORT");
+    }
+    if (dbName.isEmpty()) {
+        missingDbVars << QStringLiteral("DB_NAME or PGDATABASE");
+    }
+    if (dbUser.isEmpty()) {
+        missingDbVars << QStringLiteral("DB_USER or PGUSER");
+    }
+    if (dbPassword.isEmpty()) {
+        missingDbVars << QStringLiteral("DB_PASSWORD or PGPASSWORD");
+    }
+
+    if (!missingDbVars.isEmpty()) {
+        const QString missingMessage = QStringLiteral("Missing database configuration: %1")
+                                           .arg(missingDbVars.join(QStringLiteral(", ")));
+        qCritical() << missingMessage;
+        QMessageBox::critical(nullptr,
+                              QObject::tr("Database configuration error"),
+                              missingMessage + "\n\nSet these values via environment variables or .env file.");
+        return 1;
+    }
+
     QSplashScreen splash(QPixmap(":/images/banner2.jpg").scaled(800, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     QLabel splashLabel(&splash);
-    splashLabel.setText("OBSIDIAN.LUXE | BookStore\n\nР—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ...");
+    splashLabel.setText("Library\n\nLoading...");
     splashLabel.setAlignment(Qt::AlignCenter);
     splashLabel.setStyleSheet("QLabel { color: white; font-size: 24px; font-family: 'Inter'; background: transparent; }");
     splashLabel.setGeometry(0, 350, 800, 100);
@@ -60,16 +220,16 @@ int main(int argc, char *argv[])
     app.processEvents();
 
     // РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє Р±Р°Р·Рµ РґР°РЅРЅС‹С…
-    splashLabel.setText("Library");
+    splashLabel.setText("Connecting to database...");
     app.processEvents();
 
     DatabaseManager dbManager;
     bool connected = dbManager.connectToDatabase(
-        "127.0.0.1",
-        2112,
-        "postgres",
-        "postgres",
-        "2112"
+        dbHost,
+        dbPort,
+        dbName,
+        dbUser,
+        dbPassword
     );
 
     if (!connected) {
@@ -81,7 +241,7 @@ int main(int argc, char *argv[])
     }
 
     // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Рё Р·Р°РїРѕР»РЅРµРЅРёРµ Р‘Р”
-    splashLabel.setText("OLibrary");
+    splashLabel.setText("Initializing database...");
     app.processEvents();
 
     if (!dbManager.checkAndInitDatabase()) {
@@ -123,22 +283,47 @@ int main(int argc, char *argv[])
     CartModel cartModel;
     cartModel.setDbManager(&dbManager);
     cartModel.setCustomerId(loggedInUserId);
-    const auto readLiqPayEnv = [](const char* primaryName,
-                                  const char* sandboxName,
-                                  const char* legacyName) {
-        QString value = qEnvironmentVariable(primaryName).trimmed();
-        if (!value.isEmpty()) {
-            return value;
-        }
-        value = qEnvironmentVariable(sandboxName).trimmed();
-        if (!value.isEmpty()) {
-            return value;
-        }
-        return qEnvironmentVariable(legacyName).trimmed();
+    struct EnvValueResult {
+        QString value;
+        QString source;
     };
 
-    const QString liqPayPublicKey = readLiqPayEnv("LIQPAY_PUBLIC_KEY", "LIQPAY_SANDBOX_PUBLIC_KEY", "PUBLIC_KEY");
-    const QString liqPayPrivateKey = readLiqPayEnv("LIQPAY_PRIVATE_KEY", "LIQPAY_SANDBOX_PRIVATE_KEY", "PRIVATE_KEY");
+    const auto readEnvValue = [&](const QStringList& names) {
+        EnvValueResult result;
+        for (const QString& name : names) {
+            const QByteArray nameBytes = name.toUtf8();
+            const QString value = normalizeSecretValue(qEnvironmentVariable(nameBytes.constData()));
+            if (!value.isEmpty()) {
+                result.value = value;
+                result.source = name;
+                return result;
+            }
+        }
+        return result;
+    };
+
+    const QStringList liqPayPublicVarNames = {
+        QStringLiteral("LIQPAY_PUBLIC_KEY"),
+        QStringLiteral("LIQPAY_SANDBOX_PUBLIC_KEY"),
+        QStringLiteral("LIQPAY_PUBLIC"),
+        QStringLiteral("LIQPAY_SANDBOX_PUBLIC"),
+        QStringLiteral("LIQPAY_PUBLICKEY"),
+        QStringLiteral("PUBLIC_KEY")
+    };
+    const QStringList liqPayPrivateVarNames = {
+        QStringLiteral("LIQPAY_PRIVATE_KEY"),
+        QStringLiteral("LIQPAY_SANDBOX_PRIVATE_KEY"),
+        QStringLiteral("LIQPAY_PRIVATE"),
+        QStringLiteral("LIQPAY_SANDBOX_PRIVATE"),
+        QStringLiteral("LIQPAY_PRIVATEKEY"),
+        QStringLiteral("PRIVATE_KEY")
+    };
+
+    const EnvValueResult liqPayPublic = readEnvValue(liqPayPublicVarNames);
+    const EnvValueResult liqPayPrivate = readEnvValue(liqPayPrivateVarNames);
+
+    const QString liqPayPublicKey = liqPayPublic.value;
+    const QString liqPayPrivateKey = liqPayPrivate.value;
 
     cartModel.setLiqPayPublicKey(liqPayPublicKey);
     cartModel.setLiqPayPrivateKey(liqPayPrivateKey);
@@ -146,7 +331,12 @@ int main(int argc, char *argv[])
         qWarning() << "LiqPay keys are not set in process environment."
                    << "Supported variables: LIQPAY_PUBLIC_KEY / LIQPAY_PRIVATE_KEY"
                    << "or LIQPAY_SANDBOX_PUBLIC_KEY / LIQPAY_SANDBOX_PRIVATE_KEY"
-                   << "or PUBLIC_KEY / PRIVATE_KEY.";
+                   << "or LIQPAY_PUBLIC / LIQPAY_PRIVATE"
+                   << "or PUBLIC_KEY / PRIVATE_KEY"
+                   << "or CLI args --liqpay-public-key / --liqpay-private-key"
+                   << "or .env file in app/current directory.";
+    } else {
+        qInfo() << "LiqPay keys loaded from" << liqPayPublic.source << "and" << liqPayPrivate.source;
     }
 
     OrdersModel ordersModel;
@@ -164,6 +354,7 @@ int main(int argc, char *argv[])
 
     // Создаем Gemini AI клиент
     GeminiClient geminiClient;
+    geminiClient.setDbManager(&dbManager);
     QString geminiApiKey = qEnvironmentVariable("GEMINI_API_KEY");
     if (geminiApiKey.isEmpty()) {
         geminiApiKey = qEnvironmentVariable("GOOGLE_API_KEY");
@@ -261,12 +452,6 @@ engine.rootContext()->setContextProperty("Theme", &theme);
             QMetaObject::invokeMethod(root, "navigateToPage",
                                       Q_ARG(QVariant, "authorDetails"));
         }
-    });
-
-    QObject::connect(&appContext, &AppContext::checkoutRequested,
-                     [&engine]() {
-        qDebug() << "Checkout requested";
-        // TODO: Show checkout dialog
     });
 
     QObject::connect(&appContext, &AppContext::loginDialogRequested,

@@ -11,8 +11,8 @@ FROM customer
 WHERE customer_id = :customerId;
 
 -- name: RegisterCustomer
-INSERT INTO customer (first_name, last_name, email, password_hash, join_date, loyalty_program, loyalty_points)
-VALUES (:first_name, :last_name, :email, :password_hash, CURRENT_DATE, FALSE, 0)
+INSERT INTO customer (first_name, last_name, email, phone, password_hash, join_date, loyalty_program, loyalty_points)
+VALUES (:first_name, :last_name, :email, :phone, :password_hash, CURRENT_DATE, FALSE, 0)
 RETURNING customer_id;
 
 -- name: UpdateCustomerName
@@ -34,6 +34,11 @@ WHERE customer_id = :customerId;
 -- name: UpdateCustomerPhone
 UPDATE customer
 SET phone = :phone
+WHERE customer_id = :customerId;
+
+-- name: UpdateCustomerPasswordHash
+UPDATE customer
+SET password_hash = :password_hash
 WHERE customer_id = :customerId;
 
 -- name: CheckCustomerExistsById

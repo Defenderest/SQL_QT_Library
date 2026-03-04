@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import ".."
 
 Item {
     id: root
@@ -11,26 +12,27 @@ Item {
     property bool dataLoaded: false
     property var chatHistory: []
     
-    // Monochrome Obsidian theme
-    readonly property color bgBody: "#030303"
-    readonly property color bgElevated: "#141414"
-    readonly property color borderLight: Qt.rgba(1, 1, 1, 0.08)
-    readonly property color borderHover: Qt.rgba(1, 1, 1, 0.25)
-    readonly property color textPrimary: "#ffffff"
-    readonly property color textSecondary: "#888888"
-    readonly property color textMuted: "#555555"
-    readonly property color userBubble: "#ffffff"
-    readonly property color aiBubble: Qt.rgba(1, 1, 1, 0.06)
+    readonly property color bgBody: Theme.bgBody
+    readonly property color bgElevated: Qt.rgba(1, 1, 1, 0.025)
+    readonly property color borderLight: Theme.borderLight
+    readonly property color borderHover: Theme.borderHover
+    readonly property color borderStrong: Qt.rgba(1, 1, 1, 0.16)
+    readonly property color textPrimary: Theme.textPrimary
+    readonly property color textSecondary: Theme.textSecondary
+    readonly property color textMuted: Theme.textMuted
+    readonly property color userBubble: Theme.accentWhite
+    readonly property color aiBubble: Qt.rgba(1, 1, 1, 0.055)
     
-    readonly property int spacingS: 8
-    readonly property int spacingM: 12
-    readonly property int spacingL: 20
+    readonly property int spacingS: Theme.spacingS
+    readonly property int spacingM: Theme.spacingM
+    readonly property int spacingL: Theme.spacingL
     
-    readonly property int radiusRound: 16
-    readonly property int radiusPill: 30
+    readonly property int radiusSoft: Theme.radiusSoft
+    readonly property int radiusRound: Theme.radiusRound
+    readonly property int radiusPill: Theme.radiusPill
     
-    readonly property int animationFast: 150
-    readonly property int animationSmooth: 400
+    readonly property int animationFast: Theme.animationFast
+    readonly property int animationSmooth: Theme.animationSmooth
     
     width: parent.width
     height: parent.height
@@ -50,27 +52,15 @@ Item {
     }
     
     function loadStoreData() {
-        console.log("📚 Завантаження даних магазину для AI...")
-        
-        if (!appContext) {
-            console.log("⚠️ appContext не доступний")
+        if (!geminiClient) {
             retryLoadData()
             return
         }
-        
-        // Отримуємо дані напряму з БД через appContext
-        var catalog = appContext.getBooksCatalogForAI()
-        
-        if (catalog && catalog.length > 0) {
-            root.currentContext = catalog
-            root.dataLoaded = true
-            retryCount = 0
-            console.log("✅ Дані отримано! Довжина:", catalog.length)
-            setupSystemPrompt()
-        } else {
-            console.log("⚠️ Каталог порожній, пробуємо ще раз...")
-            retryLoadData()
-        }
+
+        root.currentContext = ""
+        root.dataLoaded = true
+        retryCount = 0
+        setupSystemPrompt()
     }
     
     property int retryCount: 0
@@ -79,60 +69,62 @@ Item {
     function retryLoadData() {
         if (retryCount < maxRetries && !dataLoaded) {
             retryCount++
-            console.log("🔄 Повторна спроба завантаження даних (" + retryCount + "/" + maxRetries + ")...")
             Qt.callLater(function() {
                 loadStoreData()
-            }, 1500)
+            })
         } else if (retryCount >= maxRetries) {
-            console.log("❌ Досягнуто максимальну кількість спроб")
-            root.currentContext = "Дані тимчасово недоступні. AI працює в обмеженому режимі."
+            root.currentContext = ""
             root.dataLoaded = true
             setupSystemPrompt()
         }
     }
 
     function setupSystemPrompt() {
-        var prompt = "Ти — AI-консультант книжного магазину OBSIDIAN.LUXE.\n\n" +
-                     "ТВОЯ ГОЛОВНА ЗАДАЧА: Допомагати клієнтам знаходити книги з НАШОГО каталогу.\n\n" +
+        var prompt = "Ти — AI-консультант книжного магазину Library.\n\n" +
+                     "ТВОЯ ГОЛОВНА ЗАДАЧА: допомагати клієнтам знаходити книги з НАШОГО каталогу.\n\n" +
+                     "Ти маєш доступ до інструментів БД. Для питань про книги, авторів, ціну або наявність ОБОВ'ЯЗКОВО викликай tool-функції, а не вигадуй дані.\n\n" +
                      "ЖОРСТКІ ПРАВИЛА (порушення критичне):\n" +
-                     "1. Використовуй ТІЛЬКИ книги з списку нижче. НЕ ВИГАДУЙ книг!\n" +
-                     "2. Ціни та наявність брати тільки з наведених даних\n" +
-                     "3. Якщо книги немає в списку — скажи: \"На жаль, цієї книги немає в наявності\"\n" +
+                     "1. НЕ вигадуй книг, цін, залишків, авторів\n" +
+                     "2. Для фактів використовуй лише результат tool-викликів\n" +
+                     "3. Якщо tool-пошук не знаходить книгу — скажи: \"На жаль, цієї книги немає в наявності\"\n" +
                      "4. Не придумуй авторів, жанри, описи\n" +
                      "5. Пам'ятай історію розмови\n\n" +
                      "ЯК ВІДПОВІДАТИ:\n" +
                      "- Коротко, по суті\n" +
                      "- Одразу називай ціну та наявність\n" +
                      "- Пропонуй альтернативи з наявних книг\n" +
-                     "- Якщо клієнт питає про книгу — знайди її в списку та дай точні дані\n\n"
-        
-        if (root.currentContext.length > 0) {
-            prompt += "\n=== НАШІ КНИГИ (використовуй тільки ці дані) ===\n" + 
-                     root.currentContext + 
-                     "\n===========================================\n"
-        }
+                     "- Якщо клієнт питає про книгу — виклич tool і дай точні дані\n\n"
         
         if (geminiClient) {
             geminiClient.setSystemPrompt(prompt)
-            console.log("✅ Системний промпт встановлено")
         }
     }
 
     Rectangle {
         id: chatWindow
-        width: 400
-        height: 560
+        width: 430
+        height: 620
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.rightMargin: spacingL
         anchors.bottomMargin: spacingL
-        radius: 8
+        radius: radiusSoft
         color: bgBody
         border.width: 1
-        border.color: borderLight
+        border.color: borderStrong
+        clip: true
         visible: opacity > 0
         opacity: root.isChatOpen ? 1.0 : 0.0
         scale: root.isChatOpen ? 1.0 : 0.95
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: Math.max(0, radiusSoft - 1)
+            color: "transparent"
+            border.width: 1
+            border.color: borderLight
+        }
 
         Behavior on opacity {
             NumberAnimation { duration: animationSmooth }
@@ -145,30 +137,33 @@ Item {
             // Header
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 64
+                Layout.preferredHeight: 72
                 color: bgElevated
+                border.width: 1
+                border.color: borderLight
                 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: spacingL
-                    anchors.rightMargin: spacingL
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
                     spacing: spacingM
 
                     Rectangle {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
-                        radius: 18
-                        color: Qt.rgba(1, 1, 1, 0.1)
+                        Layout.preferredWidth: 38
+                        Layout.preferredHeight: 38
+                        radius: 19
+                        color: Qt.rgba(1, 1, 1, 0.06)
                         border.width: 1
-                        border.color: Qt.rgba(1, 1, 1, 0.2)
+                        border.color: borderStrong
                         
                         Label {
                             anchors.centerIn: parent
                             text: "AI"
-                            color: "#ffffff"
-                            font.family: "Inter"
+                            color: textPrimary
+                            font.family: Theme.fontCaption.family
                             font.pixelSize: 11
-                            font.bold: true
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 1
                         }
                     }
 
@@ -179,7 +174,7 @@ Item {
                         Label {
                             text: "AI Консультант"
                             color: textPrimary
-                            font.family: "Inter"
+                            font.family: Theme.fontBody.family
                             font.pixelSize: 14
                             font.weight: Font.Medium
                         }
@@ -188,18 +183,18 @@ Item {
                             spacing: spacingS
                             
                             Rectangle {
-                                Layout.preferredWidth: 6
-                                Layout.preferredHeight: 6
-                                radius: 3
+                                Layout.preferredWidth: 7
+                                Layout.preferredHeight: 7
+                                radius: 3.5
                                 color: {
                                     if (!geminiClient || geminiClient.apiKey.length === 0) 
-                                        return Qt.rgba(1, 0.5, 0.5, 0.8)
+                                        return Theme.error
                                     if (!dataLoaded) 
-                                        return Qt.rgba(1, 0.8, 0, 0.8)
-                                    return Qt.rgba(0.2, 1, 0.2, 0.8)
+                                        return Theme.warning
+                                    return Theme.success
                                 }
                             }
-                            
+                             
                             Label {
                                 text: {
                                     if (!geminiClient || geminiClient.apiKey.length === 0) 
@@ -209,58 +204,34 @@ Item {
                                     return "Підключено"
                                 }
                                 color: textSecondary
-                                font.family: "Inter"
-                                font.pixelSize: 11
+                                font.family: Theme.fontCaption.family
+                                font.pixelSize: 10
+                                font.capitalization: Font.AllUppercase
+                                font.letterSpacing: 0.8
                             }
-                        }
-                    }
-
-                    // Кнопка оновлення даних
-                    MouseArea {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        visible: !dataLoaded
-                        
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 16
-                            color: parent.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                        }
-                        
-                        Label {
-                            anchors.centerIn: parent
-                            text: "↻"
-                            color: parent.containsMouse ? textPrimary : textSecondary
-                            font.pixelSize: 16
-                        }
-                        
-                        onClicked: {
-                            console.log("🔄 Ручне оновлення даних...")
-                            retryCount = 0
-                            loadStoreData()
                         }
                     }
 
                     // Кнопка закриття
                     MouseArea {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
+                        Layout.preferredWidth: 34
+                        Layout.preferredHeight: 34
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
                         
                         Rectangle {
                             anchors.fill: parent
-                            radius: 16
-                            color: parent.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                            radius: 17
+                            color: parent.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                            border.width: 1
+                            border.color: borderLight
                         }
                         
                         Label {
                             anchors.centerIn: parent
                             text: "✕"
                             color: parent.containsMouse ? textPrimary : textSecondary
-                            font.pixelSize: 14
+                            font.pixelSize: 13
                         }
                         
                         onClicked: root.isChatOpen = false
@@ -280,23 +251,23 @@ Item {
                 id: messageList
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.margins: spacingL
+                Layout.margins: 14
                 clip: true
-                spacing: spacingM
+                spacing: 10
                 model: ListModel {
-                    ListElement { isUser: false; message: "Привіт! Я AI-консультант OBSIDIAN.LUXE. Допоможу підібрати книгу з нашого каталогу. Пишіть назву книги або автора." }
+                    ListElement { isUser: false; message: "Привіт! Я AI-консультант Library. Допоможу підібрати книгу з нашого каталогу. Пишіть назву книги або автора." }
                 }
                 
                 // Typing indicator
                 Rectangle {
                     visible: root.isTyping || (geminiClient && geminiClient.isLoading)
-                    width: 70
-                    height: 36
-                    radius: radiusRound
+                    width: 64
+                    height: 32
+                    radius: 16
                     color: aiBubble
                     anchors.left: parent.left
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: spacingM
+                    anchors.bottomMargin: spacingS
                     border.width: 1
                     border.color: borderLight
                     z: 100
@@ -325,35 +296,33 @@ Item {
                 
                 delegate: Item {
                     width: messageList.width
-                    height: bubble.height + spacingM
+                    height: bubble.height + 8
                     
                     Rectangle {
                         id: bubble
-                        width: Math.min(320, parent.width * 0.75)
-                        height: msgText.height + 20
+                        width: Math.min(chatWindow.width - 96, parent.width * 0.78)
+                        height: msgText.paintedHeight + 24
                         anchors.right: isUser ? parent.right : undefined
                         anchors.left: isUser ? undefined : parent.left
-                        radius: radiusRound
+                        radius: 18
                         color: isUser ? userBubble : aiBubble
-                        border.width: isUser ? 0 : 1
-                        border.color: borderLight
+                        border.width: 1
+                        border.color: isUser ? Qt.rgba(1, 1, 1, 0.2) : borderLight
                         
                         Text {
                             id: msgText
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.margins: 10
-                            width: parent.width - 20
+                            anchors.margins: 12
+                            width: parent.width - 24
                             text: message
                             color: isUser ? bgBody : textPrimary
-                            font.family: "Inter"
-                            font.pixelSize: 13
+                            font.family: Theme.fontBody.family
+                            font.pixelSize: 14
                             wrapMode: Text.Wrap
-                            lineHeight: 1.25
+                            lineHeight: 1.3
                             lineHeightMode: Text.ProportionalHeight
-                            maximumLineCount: 100
-                            elide: Text.ElideNone
                         }
                     }
                 }
@@ -368,7 +337,7 @@ Item {
             // Input Area
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 76
+                Layout.preferredHeight: 84
                 color: bgElevated
                 border.width: 1
                 border.color: borderLight
@@ -383,20 +352,24 @@ Item {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        radius: radiusPill
-                        color: Qt.rgba(0, 0, 0, 0.3)
+                        radius: 22
+                        color: Qt.rgba(1, 1, 1, 0.015)
                         border.width: 1
                         border.color: inputField.activeFocus ? borderHover : borderLight
+
+                        Behavior on border.color {
+                            ColorAnimation { duration: animationFast }
+                        }
                         
                         TextInput {
                             id: inputField
                             anchors.fill: parent
-                            anchors.leftMargin: spacingL
-                            anchors.rightMargin: spacingL
+                            anchors.leftMargin: 16
+                            anchors.rightMargin: 16
                             verticalAlignment: TextInput.AlignVCenter
                             color: textPrimary
-                            font.family: "Inter"
-                            font.pixelSize: 13
+                            font.family: Theme.fontBody.family
+                            font.pixelSize: 14
                             clip: true
                             selectByMouse: true
                             enabled: geminiClient && geminiClient.apiKey.length > 0 && dataLoaded
@@ -412,7 +385,7 @@ Item {
                                     return "Напишіть назву книги або автора..."
                                 }
                                 color: textMuted
-                                font.family: "Inter"
+                                font.family: Theme.fontBody.family
                                 font.pixelSize: 13
                                 visible: inputField.text.length === 0 && !inputField.activeFocus
                             }
@@ -422,23 +395,35 @@ Item {
                     }
 
                     MouseArea {
+                        id: sendArea
                         Layout.preferredWidth: 44
                         Layout.preferredHeight: 44
                         cursorShape: inputField.text.trim().length > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
                         enabled: inputField.text.trim().length > 0 && geminiClient && geminiClient.apiKey.length > 0 && dataLoaded
+                        hoverEnabled: true
                         
                         Rectangle {
                             anchors.fill: parent
                             radius: 22
-                            color: inputField.text.trim().length > 0 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.05)
+                            color: sendArea.enabled
+                                   ? (sendArea.containsMouse ? Theme.accentWhite : "transparent")
+                                   : Qt.rgba(1, 1, 1, 0.04)
+                            border.width: 1
+                            border.color: sendArea.enabled ? Theme.accentWhite : borderLight
+
+                            Behavior on color {
+                                ColorAnimation { duration: animationFast }
+                            }
                         }
                         
                         Label {
                             anchors.centerIn: parent
                             text: "→"
-                            color: inputField.text.trim().length > 0 ? bgBody : textMuted
+                            color: sendArea.enabled
+                                   ? (sendArea.containsMouse ? bgBody : textPrimary)
+                                   : textMuted
                             font.pixelSize: 18
-                            font.bold: true
+                            font.family: Theme.fontBody.family
                         }
                         
                         onClicked: sendMessage()
@@ -450,8 +435,8 @@ Item {
     
     MouseArea {
         id: floatingButton
-        width: 56
-        height: 56
+        width: 58
+        height: 58
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.rightMargin: spacingL
@@ -459,6 +444,7 @@ Item {
         visible: opacity > 0
         opacity: root.isChatOpen ? 0.0 : 1.0
         cursorShape: Qt.PointingHandCursor
+        hoverEnabled: true
         
         Behavior on opacity {
             NumberAnimation { duration: animationSmooth }
@@ -466,16 +452,23 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: 28
-            color: "#ffffff"
+            radius: 29
+            color: floatingButton.containsMouse ? Theme.accentWhite : Qt.rgba(1, 1, 1, 0.07)
+            border.width: 1
+            border.color: Theme.accentWhite
+
+            Behavior on color {
+                ColorAnimation { duration: animationFast }
+            }
             
             Label {
                 anchors.centerIn: parent
                 text: "AI"
-                color: bgBody
-                font.family: "Inter"
-                font.pixelSize: 14
-                font.bold: true
+                color: floatingButton.containsMouse ? bgBody : textPrimary
+                font.family: Theme.fontCaption.family
+                font.pixelSize: 12
+                font.capitalization: Font.AllUppercase
+                font.letterSpacing: 1.2
             }
         }
 
@@ -524,7 +517,7 @@ Item {
             chatHistory.push({role: "user", text: message})
             
             // Формуємо контекст з історією
-            var fullContext = currentContext + "\n\nІСТОРІЯ РОЗМОВИ:\n"
+            var fullContext = "ІСТОРІЯ РОЗМОВИ:\n"
             for (var i = Math.max(0, chatHistory.length - 10); i < chatHistory.length; i++) {
                 var entry = chatHistory[i]
                 if (entry.role === "user") {

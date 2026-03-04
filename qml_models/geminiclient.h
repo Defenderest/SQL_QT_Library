@@ -8,6 +8,8 @@
 #include <QJsonArray>
 #include <QString>
 
+class DatabaseManager;
+
 class GeminiClient : public QObject
 {
     Q_OBJECT
@@ -25,10 +27,9 @@ public:
     Q_INVOKABLE void sendMessage(const QString& message, const QString& context = "");
     Q_INVOKABLE void setSystemPrompt(const QString& prompt);
     Q_INVOKABLE void listAvailableModels();
-    
-    // Build comprehensive context from database
-    QString buildBooksContext();
 
+    void setDbManager(DatabaseManager* dbManager);
+    
 signals:
     void apiKeyChanged();
     void isLoadingChanged();
@@ -39,10 +40,15 @@ private slots:
     void onReplyFinished();
 
 private:
+    QJsonArray buildToolsPayload() const;
+    QJsonObject executeToolCall(const QString& functionName, const QJsonObject& args) const;
+    QJsonObject buildRequestBody(const QJsonArray& conversation, bool allowToolCalls) const;
+
     QString m_apiKey;
     bool m_isLoading = false;
     QNetworkAccessManager* m_networkManager;
     QString m_systemPrompt;
+    DatabaseManager* m_dbManager = nullptr;
     
     static const QString API_URL;
 };
