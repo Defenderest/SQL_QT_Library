@@ -52,6 +52,7 @@ public:
                                 const QString &language,
                                 const QString &description,
                                 const QString &coverImagePath);
+    Q_INVOKABLE bool addBookStock(int bookId, int quantityToAdd);
     Q_INVOKABLE bool updateBookPrice(int bookId, double price);
     Q_INVOKABLE bool deleteBook(int bookId);
 

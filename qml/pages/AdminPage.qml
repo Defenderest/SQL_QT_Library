@@ -822,7 +822,7 @@ Item {
                         }
 
                         Label {
-                            Layout.preferredWidth: 130
+                            Layout.preferredWidth: root.compactLayout ? 112 : 124
                             text: "Ціна"
                             color: Theme.textMuted
                             font.family: Theme.fontCaption.family
@@ -831,8 +831,8 @@ Item {
                         }
 
                         Label {
-                            Layout.preferredWidth: root.compactLayout ? 208 : 268
-                            text: "Дії"
+                            Layout.preferredWidth: root.compactLayout ? 286 : 386
+                            text: "Дії та залишок"
                             color: Theme.textMuted
                             font.family: Theme.fontCaption.family
                             font.pixelSize: 10
@@ -874,7 +874,10 @@ Item {
                                 model: root.filteredBooks.length
 
                                 Rectangle {
+                                    id: bookRowCard
                                     property var row: root.filteredBooks[index]
+                                    property int actionFieldWidth: root.compactLayout ? 82 : 94
+                                    property int actionButtonWidth: root.compactLayout ? 78 : 92
                                     width: parent.width
                                     height: 74
                                     radius: Theme.radiusSoft
@@ -923,15 +926,41 @@ Item {
 
                                         AdminField {
                                             id: priceField
-                                            Layout.preferredWidth: 130
+                                            Layout.preferredWidth: bookRowCard.actionFieldWidth + 24
                                             text: row.price !== undefined ? Number(row.price).toFixed(2) : ""
                                             validator: DoubleValidator { bottom: 0; decimals: 2 }
                                         }
 
                                         ActionButton {
                                             text: "Ціна"
-                                            implicitWidth: 96
+                                            implicitWidth: bookRowCard.actionButtonWidth
                                             onClicked: adminModel.updateBookPrice(row.bookId, root.parseNumber(priceField.text, -1))
+                                        }
+
+                                        AdminField {
+                                            id: stockAddField
+                                            Layout.preferredWidth: bookRowCard.actionFieldWidth
+                                            placeholderText: "+ шт."
+                                            validator: IntValidator { bottom: 1 }
+                                        }
+
+                                        ActionButton {
+                                            text: "Додати"
+                                            implicitWidth: bookRowCard.actionButtonWidth + 14
+                                            borderColor: Theme.success
+                                            textColor: Theme.success
+                                            hoverColor: Qt.rgba(76 / 255, 175 / 255, 80 / 255, 0.14)
+                                            onClicked: {
+                                                var qty = root.parseNumber(stockAddField.text, 0)
+                                                if (qty <= 0) {
+                                                    root.showToast("Вкажіть кількість більше нуля", Theme.warning)
+                                                    return
+                                                }
+
+                                                if (adminModel.addBookStock(row.bookId, qty)) {
+                                                    stockAddField.text = ""
+                                                }
+                                            }
                                         }
 
                                         ActionButton {

@@ -110,6 +110,8 @@ QVariantMap OrdersModel::getOrderDetails(int orderId)
         if (order.orderId == orderId) {
             details["orderId"] = order.orderId;
             details["orderDate"] = order.orderDate.toString("dd.MM.yyyy HH:mm");
+            details["orderDateIso"] = order.orderDate.toString(Qt::ISODate);
+            details["orderDateMs"] = order.orderDate.isValid() ? order.orderDate.toMSecsSinceEpoch() : 0;
             details["totalAmount"] = order.totalAmount;
             details["status"] = order.status;
             details["shippingAddress"] = order.shippingAddress;
@@ -130,6 +132,8 @@ QVariantMap OrdersModel::getOrderDetails(int orderId)
                 QVariantMap statusMap;
                 statusMap["status"] = status.status;
                 statusMap["statusDate"] = status.statusDate.toString("dd.MM.yyyy HH:mm");
+                statusMap["statusDateIso"] = status.statusDate.toString(Qt::ISODate);
+                statusMap["statusDateMs"] = status.statusDate.isValid() ? status.statusDate.toMSecsSinceEpoch() : 0;
                 statusMap["trackingNumber"] = status.trackingNumber;
                 statuses.append(statusMap);
             }

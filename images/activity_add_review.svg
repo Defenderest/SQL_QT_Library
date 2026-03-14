@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1300" viewBox="0 0 1200 1300">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: #ffffff; stroke: #000000; stroke-width: 2.5; }
+      .lane { stroke: #000000; stroke-width: 2.5; }
+      .action { fill: #ffffff; stroke: #000000; stroke-width: 3; }
+      .flow { fill: none; stroke: #000000; stroke-width: 3.5; marker-end: url(#arrow); }
+      .title { font-family: Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #000000; }
+      .label { font-family: Arial, sans-serif; font-size: 18px; font-weight: 500; fill: #000000; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="1300"/>
+  <rect class="frame" x="40" y="40" width="1120" height="1220"/>
+  <line class="lane" x1="600" y1="40" x2="600" y2="1260"/>
+  <line class="lane" x1="40" y1="120" x2="1160" y2="120"/>
+
+  <text class="title" x="300" y="82" text-anchor="middle">Користувач</text>
+  <text class="title" x="880" y="82" text-anchor="middle">Система «Книгарня»</text>
+
+  <circle cx="300" cy="190" r="22" fill="#000000"/>
+
+  <rect class="action" x="120" y="250" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="300" y="288" text-anchor="middle">
+    <tspan x="300" dy="0">Увійти в</tspan>
+    <tspan x="300" dy="26">систему</tspan>
+  </text>
+
+  <rect class="action" x="720" y="250" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="900" y="288" text-anchor="middle">
+    <tspan x="900" dy="0">Перевірити авторизацію</tspan>
+    <tspan x="900" dy="26">користувача</tspan>
+  </text>
+
+  <rect class="action" x="120" y="430" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="300" y="468" text-anchor="middle">
+    <tspan x="300" dy="0">Відкрити потрібну</tspan>
+    <tspan x="300" dy="26">книгу</tspan>
+  </text>
+
+  <rect class="action" x="720" y="430" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="900" y="0" text-anchor="middle">
+    <tspan x="900" y="466">Відобразити деталі книги</tspan>
+    <tspan x="900" y="492">та форму відгуку</tspan>
+  </text>
+
+  <rect class="action" x="120" y="610" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="300" y="648" text-anchor="middle">
+    <tspan x="300" dy="0">Ввести текст відгуку</tspan>
+    <tspan x="300" dy="26">та оцінку</tspan>
+  </text>
+
+  <rect class="action" x="720" y="610" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="900" y="648" text-anchor="middle">
+    <tspan x="900" dy="0">Перевірити коректність</tspan>
+    <tspan x="900" dy="26">введених даних</tspan>
+  </text>
+
+  <rect class="action" x="120" y="790" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="300" y="841" text-anchor="middle">Надіслати відгук</text>
+
+  <rect class="action" x="720" y="790" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="900" y="828" text-anchor="middle">
+    <tspan x="900" dy="0">Зберегти відгук</tspan>
+    <tspan x="900" dy="26">у базі даних</tspan>
+  </text>
+
+  <rect class="action" x="120" y="970" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="300" y="1008" text-anchor="middle">
+    <tspan x="300" dy="0">Переглянути оновлені</tspan>
+    <tspan x="300" dy="26">відгуки</tspan>
+  </text>
+
+  <rect class="action" x="720" y="970" width="360" height="92" rx="38" ry="38"/>
+  <text class="label" x="900" y="1008" text-anchor="middle">
+    <tspan x="900" dy="0">Відобразити</tspan>
+    <tspan x="900" dy="26">доданий відгук</tspan>
+  </text>
+
+  <path class="flow" d="M 300 212 L 300 250"/>
+  <path class="flow" d="M 480 296 L 720 296"/>
+  <path class="flow" d="M 720 342 L 480 476"/>
+  <path class="flow" d="M 480 476 L 720 476"/>
+  <path class="flow" d="M 720 522 L 480 656"/>
+  <path class="flow" d="M 480 656 L 720 656"/>
+  <path class="flow" d="M 720 702 L 480 836"/>
+  <path class="flow" d="M 480 836 L 720 836"/>
+  <path class="flow" d="M 720 882 L 480 1016"/>
+  <path class="flow" d="M 480 1016 L 720 1016"/>
+  <path class="flow" d="M 900 1062 L 900 1144"/>
+
+  <circle cx="900" cy="1175" r="26" fill="#ffffff" stroke="#000000" stroke-width="4"/>
+  <circle cx="900" cy="1175" r="15" fill="#000000"/>
+</svg>

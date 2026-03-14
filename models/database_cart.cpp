@@ -50,6 +50,9 @@ bool DatabaseManager::addOrUpdateCartItem(int customerId, int bookId, int quanti
         qWarning() << "addOrUpdateCartItem: Немає активного з'єднання з БД.";
         return false;
     }
+
+    ensureReservationStateFresh();
+
     if (quantity <= 0) {
         qWarning() << "addOrUpdateCartItem: Спроба додати товар з кількістю <= 0. Видалення товару...";
         return removeCartItem(customerId, bookId); // Якщо кількість 0 або менше, видаляємо товар

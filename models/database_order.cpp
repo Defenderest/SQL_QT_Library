@@ -111,7 +111,12 @@ OrderDisplayInfo DatabaseManager::getOrderDetailsById(int orderId) const
     return orderInfo;
 }
 
-double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items, const QString &shippingAddress, const QString &paymentMethod, int &newOrderId)
+double DatabaseManager::createOrder(int customerId,
+                                    const QMap<int, int> &items,
+                                    const QString &shippingAddress,
+                                    const QString &paymentMethod,
+                                    int &newOrderId,
+                                    const QString& reservationProviderOrderId)
 {
     newOrderId = -1;
     double calculatedTotalAmount = 0.0;
@@ -126,6 +131,11 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
         return errorReturnValue;
     }
 
+    ensureReservationStateFresh();
+
+    const QString reservationToken = reservationProviderOrderId.trimmed();
+    const bool usesReservation = !reservationToken.isEmpty();
+
     if (!m_db.transaction()) {
         qCritical() << "Не вдалося почати транзакцію для створення замовлення:" << m_db.lastError().text();
         return errorReturnValue;
@@ -135,25 +145,90 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
     QSqlQuery query(m_db);
     bool success = true;
     QVariant lastId;
+    int reservationId = -1;
 
-    const QString insertOrderSQL = getSqlQuery("InsertOrderHeader");
-    if (insertOrderSQL.isEmpty()) {
-        qCritical() << "SQL запит 'InsertOrderHeader' не знайдено.";
-        success = false;
-    } else if (!query.prepare(insertOrderSQL)) {
-        qCritical() << "Помилка підготовки запиту 'InsertOrderHeader':" << query.lastError().text();
-        success = false;
-    } else {
-        qInfo() << "Executing SQL 'InsertOrderHeader' for customer ID:" << customerId;
-        query.bindValue(":customer_id", customerId);
-        query.bindValue(":shipping_address", shippingAddress);
-        query.bindValue(":payment_method", paymentMethod.isEmpty() ? QVariant(QVariant::String) : paymentMethod);
-
-        if (executeInsertQuery(query, "Insert Order Header", lastId)) {
-            newOrderId = lastId.toInt();
-            qInfo() << "Створено заголовок замовлення з ID:" << newOrderId;
-        } else {
+    if (usesReservation) {
+        const QString reservationSql = getSqlQuery(QStringLiteral("GetBookReservationByProviderOrderIdForUpdate"));
+        const QString reservationItemsSql = getSqlQuery(QStringLiteral("GetBookReservationItemsByReservationId"));
+        if (reservationSql.isEmpty() || reservationItemsSql.isEmpty()) {
             success = false;
+        } else {
+            QSqlQuery reservationQuery(m_db);
+            QSqlQuery reservationItemsQuery(m_db);
+
+            if (!reservationQuery.prepare(reservationSql) || !reservationItemsQuery.prepare(reservationItemsSql)) {
+                qCritical() << "Помилка підготовки запитів бронювання перед створенням замовлення:"
+                            << reservationQuery.lastError().text()
+                            << reservationItemsQuery.lastError().text();
+                success = false;
+            } else {
+                reservationQuery.bindValue(":provider_order_id", reservationToken);
+                if (!reservationQuery.exec()) {
+                    qCritical() << "Помилка завантаження бронювання перед створенням замовлення:"
+                                << reservationQuery.lastError().text();
+                    success = false;
+                } else if (!reservationQuery.next()) {
+                    qWarning() << "Не знайдено активної броні для provider_order_id" << reservationToken;
+                    success = false;
+                } else {
+                    reservationId = reservationQuery.value("reservation_id").toInt();
+                    const int reservationCustomerId = reservationQuery.value("customer_id").toInt();
+                    const QString reservationStatus = reservationQuery.value("status").toString().trimmed();
+                    const QDateTime expiresAt = reservationQuery.value("expires_at").toDateTime();
+
+                    if (reservationCustomerId != customerId) {
+                        qWarning() << "Бронювання належить іншому користувачу:" << reservationCustomerId << "expected" << customerId;
+                        success = false;
+                    } else if (reservationStatus.compare(QStringLiteral("active"), Qt::CaseInsensitive) != 0) {
+                        qWarning() << "Бронювання більше неактивне. Status:" << reservationStatus;
+                        success = false;
+                    } else if (expiresAt.isValid() && expiresAt <= QDateTime::currentDateTimeUtc()) {
+                        qWarning() << "Бронювання прострочене для provider_order_id" << reservationToken;
+                        success = false;
+                    } else {
+                        QMap<int, int> reservedItems;
+                        reservationItemsQuery.bindValue(":reservation_id", reservationId);
+                        if (!reservationItemsQuery.exec()) {
+                            qCritical() << "Помилка завантаження складу бронювання:"
+                                        << reservationItemsQuery.lastError().text();
+                            success = false;
+                        } else {
+                            while (reservationItemsQuery.next()) {
+                                reservedItems.insert(reservationItemsQuery.value("book_id").toInt(),
+                                                     reservationItemsQuery.value("quantity").toInt());
+                            }
+
+                            if (reservedItems != items) {
+                                qWarning() << "Склад замовлення не збігається з активною бронню.";
+                                success = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (success) {
+        const QString insertOrderSQL = getSqlQuery("InsertOrderHeader");
+        if (insertOrderSQL.isEmpty()) {
+            qCritical() << "SQL запит 'InsertOrderHeader' не знайдено.";
+            success = false;
+        } else if (!query.prepare(insertOrderSQL)) {
+            qCritical() << "Помилка підготовки запиту 'InsertOrderHeader':" << query.lastError().text();
+            success = false;
+        } else {
+            qInfo() << "Executing SQL 'InsertOrderHeader' for customer ID:" << customerId;
+            query.bindValue(":customer_id", customerId);
+            query.bindValue(":shipping_address", shippingAddress);
+            query.bindValue(":payment_method", paymentMethod.isEmpty() ? QVariant(QVariant::String) : paymentMethod);
+
+            if (executeInsertQuery(query, "Insert Order Header", lastId)) {
+                newOrderId = lastId.toInt();
+                qInfo() << "Створено заголовок замовлення з ID:" << newOrderId;
+            } else {
+                success = false;
+            }
         }
     }
 
@@ -162,15 +237,16 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
         const QString getBookPriceSQL = getSqlQuery("GetBookPriceAndStockForUpdate");
         const QString updateStockSQL = getSqlQuery("UpdateBookStock");
 
-        if (insertItemSQL.isEmpty() || getBookPriceSQL.isEmpty() || updateStockSQL.isEmpty()) {
-             qCritical() << "Помилка завантаження SQL запитів для створення позицій замовлення.";
-             success = false;
+        if (insertItemSQL.isEmpty() || getBookPriceSQL.isEmpty() || (!usesReservation && updateStockSQL.isEmpty())) {
+              qCritical() << "Помилка завантаження SQL запитів для створення позицій замовлення.";
+              success = false;
         } else {
             QSqlQuery itemQuery(m_db);
             QSqlQuery priceQuery(m_db);
             QSqlQuery updateStockQuery(m_db);
 
-            if (!itemQuery.prepare(insertItemSQL) || !priceQuery.prepare(getBookPriceSQL) || !updateStockQuery.prepare(updateStockSQL)) {
+            if (!itemQuery.prepare(insertItemSQL) || !priceQuery.prepare(getBookPriceSQL) ||
+                (!usesReservation && !updateStockQuery.prepare(updateStockSQL))) {
                 qCritical() << "Помилка підготовки запитів для позицій замовлення, ціни або оновлення кількості:"
                             << itemQuery.lastError().text() << priceQuery.lastError().text() << updateStockQuery.lastError().text();
                 success = false;
@@ -196,26 +272,28 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
                         double currentPrice = priceQuery.value(0).toDouble();
                         int currentStock = priceQuery.value(1).toInt();
 
-                        if (quantityToOrder > currentStock) {
-                             qWarning() << "Недостатньо товару на складі для книги ID" << bookId << "(замовлено:" << quantityToOrder << ", на складі:" << currentStock << "). Замовлення скасовано.";
-                             success = false;
-                             break;
+                        if (!usesReservation && quantityToOrder > currentStock) {
+                              qWarning() << "Недостатньо товару на складі для книги ID" << bookId << "(замовлено:" << quantityToOrder << ", на складі:" << currentStock << "). Замовлення скасовано.";
+                              success = false;
+                              break;
                         }
 
-                        qInfo() << "Executing SQL 'UpdateBookStock' for book ID:" << bookId << "Quantity to decrease:" << quantityToOrder;
-                        updateStockQuery.bindValue(":quantity", quantityToOrder);
-                        updateStockQuery.bindValue(":book_id", bookId);
-                        if (!updateStockQuery.exec()) {
-                            qCritical() << "Помилка виконання 'UpdateBookStock' для книги ID" << bookId << ":" << updateStockQuery.lastError().text();
-                            success = false;
-                            break;
+                        if (!usesReservation) {
+                            qInfo() << "Executing SQL 'UpdateBookStock' for book ID:" << bookId << "Quantity to decrease:" << quantityToOrder;
+                            updateStockQuery.bindValue(":quantity", quantityToOrder);
+                            updateStockQuery.bindValue(":book_id", bookId);
+                            if (!updateStockQuery.exec()) {
+                                qCritical() << "Помилка виконання 'UpdateBookStock' для книги ID" << bookId << ":" << updateStockQuery.lastError().text();
+                                success = false;
+                                break;
+                            }
+                            if (updateStockQuery.numRowsAffected() == 0) {
+                                qWarning() << "Не вдалося виконати 'UpdateBookStock' для книги ID" << bookId << "(кількість змінилася або недостатньо). Замовлення скасовано.";
+                                success = false;
+                                break;
+                            }
+                            qInfo() << "Кількість на складі для книги ID" << bookId << "успішно оновлено.";
                         }
-                        if (updateStockQuery.numRowsAffected() == 0) {
-                            qWarning() << "Не вдалося виконати 'UpdateBookStock' для книги ID" << bookId << "(кількість змінилася або недостатньо). Замовлення скасовано.";
-                            success = false;
-                            break;
-                        }
-                        qInfo() << "Кількість на складі для книги ID" << bookId << "успішно оновлено.";
 
                         itemQuery.bindValue(":order_id", newOrderId);
                         itemQuery.bindValue(":book_id", bookId);
@@ -299,6 +377,27 @@ double DatabaseManager::createOrder(int customerId, const QMap<int, int> &items,
                 success = false;
             } else {
                 qInfo() << "Кошик очищено після створення замовлення для customer ID" << customerId;
+            }
+        }
+    }
+
+    if (success && usesReservation) {
+        const QString completeReservationSql = getSqlQuery(QStringLiteral("CompleteBookReservationById"));
+        if (completeReservationSql.isEmpty()) {
+            success = false;
+        } else {
+            QSqlQuery completeReservationQuery(m_db);
+            if (!completeReservationQuery.prepare(completeReservationSql)) {
+                qCritical() << "Помилка підготовки запиту завершення бронювання:" << completeReservationQuery.lastError().text();
+                success = false;
+            } else {
+                completeReservationQuery.bindValue(QStringLiteral(":reservation_id"), reservationId);
+                completeReservationQuery.bindValue(QStringLiteral(":status"), QStringLiteral("completed"));
+                completeReservationQuery.bindValue(QStringLiteral(":order_id"), newOrderId);
+                if (!completeReservationQuery.exec()) {
+                    qCritical() << "Помилка завершення бронювання після створення замовлення:" << completeReservationQuery.lastError().text();
+                    success = false;
+                }
             }
         }
     }

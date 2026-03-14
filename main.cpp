@@ -39,14 +39,36 @@
 
 int main(int argc, char *argv[])
 {
+    const auto setDefaultEnv = [](const char* name, const QByteArray& value) {
+        const QByteArray current = qgetenv(name);
+        if (current.trimmed().isEmpty()) {
+            qputenv(name, value);
+        }
+    };
+
     QByteArray chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
     if (chromiumFlags.trimmed().isEmpty()) {
         chromiumFlags = "--disable-background-timer-throttling "
                         "--disable-renderer-backgrounding "
-                        "--disable-backgrounding-occluded-windows";
+                        "--disable-backgrounding-occluded-windows "
+                        "--enable-gpu-rasterization "
+                        "--enable-zero-copy "
+                        "--enable-oop-rasterization "
+                        "--ignore-gpu-blocklist "
+                        "--enable-native-gpu-memory-buffers "
+                        "--num-raster-threads=4";
+#ifdef Q_OS_WIN
+        chromiumFlags += " --disable-features=CalculateNativeWinOcclusion";
+#endif
     }
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
 
+    setDefaultEnv("QSG_RHI_BACKEND", "opengl");
+#ifdef Q_OS_WIN
+    setDefaultEnv("QT_OPENGL", "desktop");
+#endif
+
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 

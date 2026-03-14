@@ -16,6 +16,8 @@ QList<BookDisplayInfo> DatabaseManager::getAllBooksForDisplay(int limit, int off
         return books;
     }
 
+    ensureReservationStateFresh();
+
     QString sql = getSqlQuery("GetAllBooksForDisplay");
     if (sql.isEmpty()) {
         qCritical() << "SQL запит 'GetAllBooksForDisplay' не знайдено.";
@@ -83,6 +85,8 @@ QList<BookDisplayInfo> DatabaseManager::getFilteredBooksForDisplay(const BookFil
         qWarning() << "Неможливо отримати відфільтровані книги: немає активного з'єднання з БД.";
         return books;
     }
+
+    ensureReservationStateFresh();
 
     QString sqlBase = getSqlQuery("GetFilteredBooksForDisplayBase");
     if (sqlBase.isEmpty()) {
@@ -191,6 +195,8 @@ QList<BookDisplayInfo> DatabaseManager::searchBooksForDisplay(const QString &que
         qWarning() << "Неможливо виконати пошук книг: немає активного з'єднання з БД.";
         return books;
     }
+
+    ensureReservationStateFresh();
 
     if (query.isEmpty()) {
         return getAllBooksForDisplay(limit, offset);
@@ -319,6 +325,8 @@ BookDetailsInfo DatabaseManager::getBookDetails(int bookId) const
         return details;
     }
 
+    ensureReservationStateFresh();
+
     const QString sql = getSqlQuery("GetBookDetailsById");
     if (sql.isEmpty()) {
         qCritical() << "SQL запит 'GetBookDetailsById' не знайдено.";
@@ -381,6 +389,8 @@ BookDisplayInfo DatabaseManager::getBookDisplayInfoById(int bookId) const
         return bookInfo;
     }
 
+    ensureReservationStateFresh();
+
     const QString sql = getSqlQuery("GetBookDisplayInfoById");
     if (sql.isEmpty()) {
         qCritical() << "SQL запит 'GetBookDisplayInfoById' не знайдено.";
@@ -433,6 +443,8 @@ QList<BookDisplayInfo> DatabaseManager::getBooksByGenre(const QString &genre, in
         qWarning() << "Неможливо отримати книги: не вказано жанр.";
         return books;
     }
+
+    ensureReservationStateFresh();
 
     const QString sql = getSqlQuery("GetBooksByGenre");
     if (sql.isEmpty()) {
@@ -548,6 +560,8 @@ QList<BookDisplayInfo> DatabaseManager::getSimilarBooks(int currentBookId, const
         qWarning() << "Неможливо отримати схожі книги: немає з'єднання, порожній жанр або невірний currentBookId.";
         return books;
     }
+
+    ensureReservationStateFresh();
 
     const QString sql = getSqlQuery("GetSimilarBooksByGenre");
     if (sql.isEmpty()) {

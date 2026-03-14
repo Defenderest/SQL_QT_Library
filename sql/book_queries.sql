@@ -184,6 +184,11 @@ UPDATE book
 SET price = :price
 WHERE book_id = :book_id;
 
+-- name: IncreaseBookStockAdmin
+UPDATE book
+SET stock_quantity = stock_quantity + :quantity_to_add
+WHERE book_id = :book_id;
+
 -- name: UpdateBookAdmin
 UPDATE book
 SET

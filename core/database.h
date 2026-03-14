@@ -78,6 +78,18 @@ public:
                                     const QString& status,
                                     const QString& details = QString());
     bool linkPaymentTransactionToOrder(const QString& providerOrderId, int orderId);
+    bool createBookReservation(int customerId,
+                               const QString& providerOrderId,
+                               const QMap<int, int>& items,
+                               int holdMinutes,
+                               QString* errorMessage = nullptr);
+    bool releaseBookReservationByProviderOrderId(const QString& providerOrderId,
+                                                 const QString& status,
+                                                 QString* errorMessage = nullptr);
+    bool completeBookReservationByProviderOrderId(const QString& providerOrderId,
+                                                  int orderId,
+                                                  QString* errorMessage = nullptr);
+    bool cleanupExpiredBookReservations();
 
     // Customer statistics
     int getCustomerOrdersCount(int customerId) const;
@@ -96,7 +108,12 @@ public:
 
     BookDisplayInfo getBookDisplayInfoById(int bookId) const;
 
-    double createOrder(int customerId, const QMap<int, int> &items, const QString &shippingAddress, const QString &paymentMethod, int &newOrderId);
+    double createOrder(int customerId,
+                       const QMap<int, int> &items,
+                       const QString &shippingAddress,
+                       const QString &paymentMethod,
+                       int &newOrderId,
+                       const QString& reservationProviderOrderId = QString());
 
     bool addComment(int bookId, int customerId, const QString &commentText, int rating);
 
@@ -127,6 +144,7 @@ public:
                            const QString &language,
                            const QString &description,
                            const QString &coverImagePath);
+    bool increaseBookStockByAdmin(int bookId, int quantityToAdd);
     bool updateBookPriceByAdmin(int bookId, double price);
     bool deleteBookByAdmin(int bookId);
 
@@ -155,11 +173,13 @@ public:
     bool executeInsertQuery(QSqlQuery &query, const QString &description, QVariant &insertedId);
 
 private:
+    void ensureReservationStateFresh() const;
     bool loadSqlQueries(const QString& directory = "sql");
     bool parseSqlFile(const QString& filePath);
     QString getSqlQuery(const QString& queryName) const;
 
     QMap<QString, QString> m_sqlQueries;
+    mutable QDateTime m_lastReservationCleanup;
 };
 
 #endif // DATABASE_H

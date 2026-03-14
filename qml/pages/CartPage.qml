@@ -79,7 +79,7 @@ ScrollView {
 
         function onLiqPayCheckoutOpened(checkoutUrl) {
             root.checkoutError = false
-            root.checkoutMessage = ""
+            root.checkoutMessage = "Книги зарезервовано на 15 хвилин. Завершіть оплату, поки бронь активна."
             root.liqPayCheckoutUrl = checkoutUrl
             root.openLiqPayOverlay()
         }
@@ -728,7 +728,7 @@ ScrollView {
     Loader {
         id: liqPayOverlayLoader
         active: true
-        asynchronous: false
+        asynchronous: true
         source: "qrc:/components/LiqPayCheckoutOverlay.qml"
 
         onStatusChanged: {
@@ -758,7 +758,7 @@ ScrollView {
         function onPaymentCanceled() {
             cartModel.cancelPendingLiqPayCheckout()
             root.checkoutError = true
-            root.checkoutMessage = "Оплату LiqPay скасовано"
+            root.checkoutMessage = "Оплату LiqPay скасовано, бронь книг знято"
             root.pendingCheckoutAddress = ""
         }
 
