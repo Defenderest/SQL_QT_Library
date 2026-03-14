@@ -7,6 +7,12 @@ DROP TABLE IF EXISTS payment_status_history CASCADE;
 -- name: DropPaymentTransactionTable
 DROP TABLE IF EXISTS payment_transaction CASCADE;
 
+-- name: DropBookReservationItemTable
+DROP TABLE IF EXISTS book_reservation_item CASCADE;
+
+-- name: DropBookReservationTable
+DROP TABLE IF EXISTS book_reservation CASCADE;
+
 -- name: DropOrderItemTable
 DROP TABLE IF EXISTS order_item CASCADE;
 
@@ -97,6 +103,31 @@ CREATE TABLE payment_transaction (
     CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE SET NULL
 );
 
+-- name: CreateBookReservationTable
+CREATE TABLE book_reservation (
+    reservation_id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    provider_order_id VARCHAR(128) NOT NULL UNIQUE,
+    order_id INTEGER,
+    status VARCHAR(32) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_book_reservation_customer FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE,
+    CONSTRAINT fk_book_reservation_order FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE SET NULL
+);
+
+-- name: CreateBookReservationItemTable
+CREATE TABLE book_reservation_item (
+    reservation_item_id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL,
+    book_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    CONSTRAINT fk_book_reservation_item_reservation FOREIGN KEY (reservation_id) REFERENCES book_reservation(reservation_id) ON DELETE CASCADE,
+    CONSTRAINT fk_book_reservation_item_book FOREIGN KEY (book_id) REFERENCES book(book_id) ON DELETE RESTRICT,
+    CONSTRAINT uq_book_reservation_item UNIQUE (reservation_id, book_id)
+);
+
 -- name: CreateBookAuthorTable
 CREATE TABLE book_author (
     book_id INTEGER NOT NULL, author_id INTEGER NOT NULL, role VARCHAR(100),
@@ -179,3 +210,12 @@ CREATE INDEX idx_payment_transaction_provider_order ON payment_transaction (prov
 
 -- name: CreateIndexPaymentStatusHistoryTransactionDate
 CREATE INDEX idx_payment_status_history_tx_date ON payment_status_history (payment_transaction_id, status_date DESC);
+
+-- name: CreateIndexBookReservationProviderOrder
+CREATE INDEX idx_book_reservation_provider_order ON book_reservation (provider_order_id);
+
+-- name: CreateIndexBookReservationStatusExpires
+CREATE INDEX idx_book_reservation_status_expires ON book_reservation (status, expires_at);
+
+-- name: CreateIndexBookReservationItemBook
+CREATE INDEX idx_book_reservation_item_book ON book_reservation_item (book_id);

@@ -52,6 +52,8 @@ AuthorDetailsInfo DatabaseManager::getAuthorDetails(int authorId) const
         return details;
     }
 
+    ensureReservationStateFresh();
+
     const QString authorSql = getSqlQuery("GetAuthorDetailsById");
     if (authorSql.isEmpty()) return details;
 

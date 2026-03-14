@@ -58,7 +58,9 @@ public:
     Q_INVOKABLE void increaseQuantity(int bookId);
     Q_INVOKABLE void decreaseQuantity(int bookId);
     Q_INVOKABLE void clearCart();
-    Q_INVOKABLE bool checkout(const QString& shippingAddress, const QString& paymentMethod);
+    Q_INVOKABLE bool checkout(const QString& shippingAddress,
+                             const QString& paymentMethod,
+                             const QString& reservationProviderOrderId = QString());
     Q_INVOKABLE void startLiqPayCheckout(const QString& shippingAddress);
     Q_INVOKABLE void verifyPendingLiqPayPayment(const QString& callbackUrl = QString());
     Q_INVOKABLE void cancelPendingLiqPayCheckout();
@@ -94,6 +96,7 @@ private:
                                   QString* outDataBase64 = nullptr,
                                   QString* outSignature = nullptr) const;
     bool isSuccessfulLiqPayStatus(const QString& status) const;
+    bool isTerminalFailedLiqPayStatus(const QString& status) const;
     bool verifyLiqPayCallbackSignature(const QString& dataBase64, const QString& signature) const;
     QJsonObject requestLiqPayStatus(const QString& providerOrderId, QString* errorMessage) const;
     void clearPendingLiqPayState();

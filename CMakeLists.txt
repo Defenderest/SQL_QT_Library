@@ -45,6 +45,7 @@ set(PROJECT_SOURCES
     models/database_cart.cpp
     models/database_admin.cpp
     models/database_payment.cpp
+    models/database_reservation.cpp
     models/datatypes.h
     # QML Models
     qml_models/appcontext.cpp
@@ -145,6 +146,7 @@ install(FILES
     sql/customer_queries.sql
     sql/order_queries.sql
     sql/payment_queries.sql
+    sql/reservation_queries.sql
     sql/functions/calculate_average_rating.sql
     sql/award_loyalty_trigger.sql
     DESTINATION ${CMAKE_INSTALL_BINDIR}/sql

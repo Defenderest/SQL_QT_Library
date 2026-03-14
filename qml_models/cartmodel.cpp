@@ -16,6 +16,8 @@
 #include <QUrlQuery>
 
 namespace {
+constexpr int kBookReservationHoldMinutes = 15;
+
 QString normalizeLiqPayValue(const QString& rawValue)
 {
     QString value = rawValue.trimmed();
@@ -109,6 +111,11 @@ double parseLiqPayAmount(const QJsonObject& payload)
     }
 
     return -1.0;
+}
+
+QString finalFailureReservationMessage(const QString& status)
+{
+    return QStringLiteral("Платіж не підтверджено. Бронь книг знято. Статус: %1").arg(status);
 }
 }
 
@@ -406,7 +413,9 @@ void CartModel::clearCart()
     loadCart();
 }
 
-bool CartModel::checkout(const QString& shippingAddress, const QString& paymentMethod)
+bool CartModel::checkout(const QString& shippingAddress,
+                         const QString& paymentMethod,
+                         const QString& reservationProviderOrderId)
 {
     m_lastCheckoutOrderId = -1;
 
@@ -451,13 +460,35 @@ bool CartModel::checkout(const QString& shippingAddress, const QString& paymentM
         return false;
     }
 
+    const QString reservationToken = reservationProviderOrderId.trimmed();
+    if (reservationToken.isEmpty()) {
+        for (auto it = itemsToOrder.constBegin(); it != itemsToOrder.constEnd(); ++it) {
+            const BookDisplayInfo bookInfo = m_dbManager->getBookDisplayInfoById(it.key());
+            if (!bookInfo.found) {
+                const QString message = "Одна з книг у кошику більше недоступна";
+                emit errorOccurred(message);
+                emit checkoutFailed(message);
+                return false;
+            }
+
+            if (it.value() > bookInfo.stockQuantity) {
+                const QString message = QStringLiteral("Книга \"%1\" вже недоступна у потрібній кількості")
+                                            .arg(bookInfo.title);
+                emit errorOccurred(message);
+                emit checkoutFailed(message);
+                return false;
+            }
+        }
+    }
+
     int newOrderId = -1;
     const double total = m_dbManager->createOrder(
         m_customerId,
         itemsToOrder,
         cleanAddress,
         paymentMethod.trimmed(),
-        newOrderId
+        newOrderId,
+        reservationToken
     );
 
     if (total < 0.0 || newOrderId <= 0) {
@@ -537,12 +568,26 @@ void CartModel::startLiqPayCheckout(const QString& shippingAddress)
         return;
     }
 
+    QMap<int, int> itemsToReserve;
+    for (const auto& item : m_items) {
+        if (item.bookId > 0 && item.quantity > 0) {
+            itemsToReserve[item.bookId] = item.quantity;
+        }
+    }
+
+    if (itemsToReserve.isEmpty()) {
+        emit liqPayCheckoutFailed("У кошику немає коректних позицій для бронювання");
+        return;
+    }
+
     if (!m_pendingLiqPayProviderOrderId.trimmed().isEmpty()) {
         m_dbManager->updatePaymentTransactionStatus(m_pendingLiqPayProviderOrderId,
                                                     QStringLiteral("replaced"));
         m_dbManager->appendPaymentStatusHistory(m_pendingLiqPayProviderOrderId,
                                                 QStringLiteral("replaced"),
                                                 QStringLiteral("Replaced by a newer checkout session"));
+        m_dbManager->releaseBookReservationByProviderOrderId(m_pendingLiqPayProviderOrderId,
+                                                             QStringLiteral("replaced"));
         clearPendingLiqPayState();
     }
 
@@ -572,8 +617,22 @@ void CartModel::startLiqPayCheckout(const QString& shippingAddress)
     paymentInfo.requestDataBase64 = requestDataBase64;
     paymentInfo.requestSignature = requestSignature;
 
+    QString reservationError;
+    if (!m_dbManager->createBookReservation(m_customerId,
+                                            providerOrderId,
+                                            itemsToReserve,
+                                            kBookReservationHoldMinutes,
+                                            &reservationError)) {
+        emit liqPayCheckoutFailed(reservationError.isEmpty()
+                                      ? QStringLiteral("Не вдалося забронювати книги на час оплати")
+                                      : reservationError);
+        return;
+    }
+
     int paymentTransactionId = -1;
     if (!m_dbManager->createPaymentTransaction(paymentInfo, paymentTransactionId)) {
+        m_dbManager->releaseBookReservationByProviderOrderId(providerOrderId,
+                                                             QStringLiteral("payment_transaction_failed"));
         emit liqPayCheckoutFailed("Не вдалося створити платіжну транзакцію");
         return;
     }
@@ -656,6 +715,28 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
         return;
     }
 
+    const auto failReservationValidation = [this, &providerOrderId](const QString& paymentStatus,
+                                                                    const QString& historyDetails,
+                                                                    const QString& userMessage,
+                                                                    const QString& responseDataBase64 = QString(),
+                                                                    const QString& responseSignature = QString(),
+                                                                    const QString& providerPaymentId = QString(),
+                                                                    bool markVerified = false) {
+        m_dbManager->updatePaymentTransactionStatus(providerOrderId,
+                                                    paymentStatus,
+                                                    responseDataBase64,
+                                                    responseSignature,
+                                                    providerPaymentId,
+                                                    markVerified);
+        m_dbManager->appendPaymentStatusHistory(providerOrderId,
+                                                paymentStatus,
+                                                historyDetails);
+        m_dbManager->releaseBookReservationByProviderOrderId(providerOrderId,
+                                                             QStringLiteral("payment_validation_failed"));
+        clearPendingLiqPayState();
+        emit liqPayCheckoutFailed(userMessage);
+    };
+
     QString status;
     QString providerPaymentId;
     double amount = -1.0;
@@ -708,16 +789,11 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
             const QJsonObject callbackPayload = callbackDoc.object();
             const QString callbackOrderId = callbackPayload.value(QStringLiteral("order_id")).toString().trimmed();
             if (callbackOrderId != providerOrderId) {
-                m_dbManager->updatePaymentTransactionStatus(providerOrderId,
-                                                            QStringLiteral("order_mismatch"),
-                                                            responseDataBase64,
-                                                            responseSignature,
-                                                            QString(),
-                                                            false);
-                m_dbManager->appendPaymentStatusHistory(providerOrderId,
-                                                        QStringLiteral("order_mismatch"),
-                                                        QStringLiteral("Callback order_id does not match pending transaction"));
-                emit liqPayCheckoutFailed("LiqPay повернув інший order_id");
+                failReservationValidation(QStringLiteral("order_mismatch"),
+                                          QStringLiteral("Callback order_id does not match pending transaction"),
+                                          QStringLiteral("LiqPay повернув інший order_id"),
+                                          responseDataBase64,
+                                          responseSignature);
                 return;
             }
 
@@ -748,16 +824,9 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
 
         const QString statusOrderId = statusPayload.value(QStringLiteral("order_id")).toString().trimmed();
         if (statusOrderId != providerOrderId) {
-            m_dbManager->updatePaymentTransactionStatus(providerOrderId,
-                                                        QStringLiteral("order_mismatch"),
-                                                        QString(),
-                                                        QString(),
-                                                        QString(),
-                                                        false);
-            m_dbManager->appendPaymentStatusHistory(providerOrderId,
-                                                    QStringLiteral("order_mismatch"),
-                                                    QStringLiteral("Status API returned mismatched order_id"));
-            emit liqPayCheckoutFailed("Невідповідний order_id у статусі LiqPay");
+            failReservationValidation(QStringLiteral("order_mismatch"),
+                                      QStringLiteral("Status API returned mismatched order_id"),
+                                      QStringLiteral("Невідповідний order_id у статусі LiqPay"));
             return;
         }
 
@@ -771,31 +840,25 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
 
     if (amount >= 0.0 && m_pendingLiqPayExpectedAmount > 0.0 &&
         qAbs(amount - m_pendingLiqPayExpectedAmount) > 0.01) {
-        m_dbManager->updatePaymentTransactionStatus(providerOrderId,
-                                                    QStringLiteral("amount_mismatch"),
-                                                    responseDataBase64,
-                                                    responseSignature,
-                                                    providerPaymentId,
-                                                    signatureVerified);
-        m_dbManager->appendPaymentStatusHistory(providerOrderId,
-                                                QStringLiteral("amount_mismatch"),
-                                                QStringLiteral("Expected amount does not match LiqPay response"));
-        emit liqPayCheckoutFailed("Сума платежу не збігається із замовленням");
+        failReservationValidation(QStringLiteral("amount_mismatch"),
+                                  QStringLiteral("Expected amount does not match LiqPay response"),
+                                  QStringLiteral("Сума платежу не збігається із замовленням"),
+                                  responseDataBase64,
+                                  responseSignature,
+                                  providerPaymentId,
+                                  signatureVerified);
         return;
     }
 
     if (!currency.isEmpty() && !m_pendingLiqPayCurrency.trimmed().isEmpty() &&
         currency.toUpper() != m_pendingLiqPayCurrency.trimmed().toUpper()) {
-        m_dbManager->updatePaymentTransactionStatus(providerOrderId,
-                                                    QStringLiteral("currency_mismatch"),
-                                                    responseDataBase64,
-                                                    responseSignature,
-                                                    providerPaymentId,
-                                                    signatureVerified);
-        m_dbManager->appendPaymentStatusHistory(providerOrderId,
-                                                QStringLiteral("currency_mismatch"),
-                                                QStringLiteral("Expected currency does not match LiqPay response"));
-        emit liqPayCheckoutFailed("Валюта платежу не збігається із замовленням");
+        failReservationValidation(QStringLiteral("currency_mismatch"),
+                                  QStringLiteral("Expected currency does not match LiqPay response"),
+                                  QStringLiteral("Валюта платежу не збігається із замовленням"),
+                                  responseDataBase64,
+                                  responseSignature,
+                                  providerPaymentId,
+                                  signatureVerified);
         return;
     }
 
@@ -813,11 +876,21 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
                                                 : QStringLiteral("Verified through LiqPay status API"));
 
     if (!isSuccessfulLiqPayStatus(normalizedStatus)) {
-        emit liqPayCheckoutFailed(QStringLiteral("Платіж не підтверджено. Статус: %1").arg(normalizedStatus));
+        if (isTerminalFailedLiqPayStatus(normalizedStatus)) {
+            m_dbManager->releaseBookReservationByProviderOrderId(providerOrderId,
+                                                                 QStringLiteral("payment_failed"));
+            clearPendingLiqPayState();
+            emit liqPayCheckoutFailed(finalFailureReservationMessage(normalizedStatus));
+            return;
+        }
+
+        emit liqPayCheckoutFailed(QStringLiteral("Платіж ще не підтверджено. Бронь зберігається. Статус: %1").arg(normalizedStatus));
         return;
     }
 
-    if (!checkout(m_pendingLiqPayShippingAddress, QStringLiteral("LiqPay Sandbox"))) {
+    if (!checkout(m_pendingLiqPayShippingAddress,
+                  QStringLiteral("LiqPay Sandbox"),
+                  providerOrderId)) {
         m_dbManager->updatePaymentTransactionStatus(providerOrderId,
                                                     QStringLiteral("order_creation_failed"),
                                                     responseDataBase64,
@@ -831,17 +904,25 @@ void CartModel::verifyPendingLiqPayPayment(const QString& callbackUrl)
     }
 
     if (m_lastCheckoutOrderId > 0) {
-        m_dbManager->linkPaymentTransactionToOrder(providerOrderId, m_lastCheckoutOrderId);
-        m_dbManager->appendPaymentStatusHistory(providerOrderId,
-                                                QStringLiteral("order_created"),
-                                                QStringLiteral("Order #%1 created").arg(m_lastCheckoutOrderId));
-        m_dbManager->addOrderStatusByAdmin(m_lastCheckoutOrderId, QStringLiteral("Оплачено"));
-        m_dbManager->updatePaymentTransactionStatus(providerOrderId,
-                                                    QStringLiteral("paid"),
-                                                    responseDataBase64,
-                                                    responseSignature,
-                                                    providerPaymentId,
-                                                    true);
+        if (!m_dbManager->linkPaymentTransactionToOrder(providerOrderId, m_lastCheckoutOrderId)) {
+            qWarning() << "Failed to link payment transaction to order" << providerOrderId << m_lastCheckoutOrderId;
+        }
+        if (!m_dbManager->appendPaymentStatusHistory(providerOrderId,
+                                                     QStringLiteral("order_created"),
+                                                     QStringLiteral("Order #%1 created").arg(m_lastCheckoutOrderId))) {
+            qWarning() << "Failed to append payment history for created order" << providerOrderId;
+        }
+        if (!m_dbManager->addOrderStatusByAdmin(m_lastCheckoutOrderId, QStringLiteral("Оплачено"))) {
+            qWarning() << "Failed to append paid order status" << m_lastCheckoutOrderId;
+        }
+        if (!m_dbManager->updatePaymentTransactionStatus(providerOrderId,
+                                                         QStringLiteral("paid"),
+                                                         responseDataBase64,
+                                                         responseSignature,
+                                                         providerPaymentId,
+                                                         true)) {
+            qWarning() << "Failed to finalize payment transaction status as paid" << providerOrderId;
+        }
     }
 
     clearPendingLiqPayState();
@@ -854,6 +935,8 @@ void CartModel::cancelPendingLiqPayCheckout()
     }
 
     if (m_dbManager) {
+        m_dbManager->releaseBookReservationByProviderOrderId(m_pendingLiqPayProviderOrderId,
+                                                             QStringLiteral("user_canceled"));
         m_dbManager->updatePaymentTransactionStatus(m_pendingLiqPayProviderOrderId,
                                                     QStringLiteral("user_canceled"));
         m_dbManager->appendPaymentStatusHistory(m_pendingLiqPayProviderOrderId,
@@ -868,8 +951,20 @@ bool CartModel::isSuccessfulLiqPayStatus(const QString& status) const
 {
     const QString normalized = status.trimmed().toLower();
     return normalized == QStringLiteral("success") ||
-           normalized == QStringLiteral("sandbox") ||
-           normalized == QStringLiteral("wait_accept");
+           normalized == QStringLiteral("sandbox");
+}
+
+bool CartModel::isTerminalFailedLiqPayStatus(const QString& status) const
+{
+    const QString normalized = status.trimmed().toLower();
+    return normalized == QStringLiteral("failure") ||
+           normalized == QStringLiteral("error") ||
+           normalized == QStringLiteral("reversed") ||
+           normalized == QStringLiteral("canceled") ||
+           normalized == QStringLiteral("cancelled") ||
+           normalized == QStringLiteral("expired") ||
+           normalized == QStringLiteral("unsubscribed") ||
+           normalized == QStringLiteral("refunded");
 }
 
 bool CartModel::verifyLiqPayCallbackSignature(const QString& dataBase64, const QString& signature) const

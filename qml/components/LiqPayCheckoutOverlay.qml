@@ -11,6 +11,8 @@ Popup {
     property string checkoutUrl: ""
     property bool slowLoading: false
     property bool resultCallbackHandled: false
+    property bool prewarming: false
+    property bool prewarmed: false
 
     signal verifyRequested()
     signal paymentReturnDetected(string callbackUrl)
@@ -48,6 +50,9 @@ Popup {
         root.slowLoading = false
         root.resultCallbackHandled = false
 
+        root.prewarming = false
+        webView.stop()
+
         var dataParam = decodeQueryParam(root.checkoutUrl, "data")
         var signatureParam = decodeQueryParam(root.checkoutUrl, "signature")
 
@@ -65,6 +70,32 @@ Popup {
         slowLoadTimer.restart()
     }
 
+    function prewarmCheckout() {
+        if (root.visible || root.prewarming || root.prewarmed)
+            return
+
+        var webView = currentWebView()
+        if (!webView)
+            return
+
+        root.prewarming = true
+        webView.stop()
+        webView.url = "https://www.liqpay.ua/robots.txt"
+    }
+
+    function releaseCheckoutPage() {
+        var webView = currentWebView()
+        if (!webView)
+            return
+
+        slowLoadTimer.stop()
+        root.slowLoading = false
+        root.resultCallbackHandled = false
+        root.prewarming = false
+        webView.stop()
+        webView.url = "about:blank"
+    }
+
     parent: Overlay.overlay
     x: 0
     y: 0
@@ -79,19 +110,27 @@ Popup {
         color: Theme.bgBody
     }
 
-    onClosed: overlayClosed()
-    onOpened: loadCheckoutPage()
+    onClosed: {
+        releaseCheckoutPage()
+        prewarmTimer.restart()
+        overlayClosed()
+    }
+    onOpened: {
+        prewarmTimer.stop()
+        loadCheckoutPage()
+    }
     onCheckoutUrlChanged: {
         if (root.visible)
             loadCheckoutPage()
     }
+    Component.onCompleted: prewarmTimer.start()
 
     WebEngineProfile {
         id: liqPayProfile
-        offTheRecord: false
+        offTheRecord: true
         storageName: "liqpay_checkout"
-        httpCacheType: WebEngineProfile.DiskHttpCache
-        persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
+        httpCacheType: WebEngineProfile.MemoryHttpCache
+        persistentCookiesPolicy: WebEngineProfile.NoPersistentCookies
     }
 
     Timer {
@@ -103,6 +142,13 @@ Popup {
             if (webView && (webView.loading || webView.loadProgress < 100))
                 root.slowLoading = true
         }
+    }
+
+    Timer {
+        id: prewarmTimer
+        interval: 350
+        repeat: false
+        onTriggered: root.prewarmCheckout()
     }
 
     ColumnLayout {
@@ -206,12 +252,14 @@ Popup {
             Layout.fillWidth: true
             Layout.fillHeight: true
             active: true
-            asynchronous: false
+            asynchronous: true
             sourceComponent: webComponent
 
             onStatusChanged: {
                 if (status === Loader.Ready && root.visible && root.checkoutUrl.length > 0) {
                     root.loadCheckoutPage()
+                } else if (status === Loader.Ready) {
+                    prewarmTimer.restart()
                 }
             }
         }
@@ -230,8 +278,8 @@ Popup {
             settings.pluginsEnabled: false
             settings.fullScreenSupportEnabled: true
             settings.autoLoadImages: true
-            settings.webGLEnabled: false
-            settings.accelerated2dCanvasEnabled: false
+            settings.webGLEnabled: true
+            settings.accelerated2dCanvasEnabled: true
 
             Rectangle {
                 anchors.fill: parent
@@ -259,18 +307,24 @@ Popup {
 
             onLoadingChanged: function(loadRequest) {
                 var status = loadRequest ? loadRequest.status : -1
+                var current = liqPayWeb.url.toString()
 
                 if (status === 2) { // LoadSucceededStatus
                     root.slowLoading = false
                     slowLoadTimer.stop()
+                    if (root.prewarming) {
+                        root.prewarming = false
+                        root.prewarmed = true
+                    }
                 }
 
                 if (status === 3) { // LoadFailedStatus
                     root.slowLoading = true
                     slowLoadTimer.stop()
+                    if (root.prewarming)
+                        root.prewarming = false
                 }
 
-                var current = liqPayWeb.url.toString()
                 if (current.indexOf("liqpay.local/result") !== -1) {
                     if (!root.resultCallbackHandled) {
                         root.resultCallbackHandled = true
@@ -282,6 +336,8 @@ Popup {
             }
 
             onRenderProcessTerminated: function(terminationStatus, exitCode) {
+                root.prewarming = false
+                root.prewarmed = false
                 console.warn("LiqPay WebEngine render process terminated", terminationStatus, exitCode)
             }
         }

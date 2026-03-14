@@ -154,6 +154,29 @@ bool AdminModel::updateBook(int bookId,
     return true;
 }
 
+bool AdminModel::addBookStock(int bookId, int quantityToAdd)
+{
+    if (!m_dbManager) {
+        emit errorOccurred("Database manager is not set");
+        return false;
+    }
+
+    if (quantityToAdd <= 0) {
+        emit errorOccurred("Вкажіть коректну кількість для додавання");
+        return false;
+    }
+
+    const bool ok = m_dbManager->increaseBookStockByAdmin(bookId, quantityToAdd);
+    if (!ok) {
+        emit errorOccurred("Не вдалося оновити залишок книги");
+        return false;
+    }
+
+    reloadBooks();
+    emit infoMessage(QStringLiteral("Додано %1 шт. до залишку").arg(quantityToAdd));
+    return true;
+}
+
 bool AdminModel::updateBookPrice(int bookId, double price)
 {
     if (!m_dbManager) {

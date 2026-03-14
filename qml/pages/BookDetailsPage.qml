@@ -11,6 +11,10 @@ ScrollView {
     property int selectedRating: 5
     property string feedbackMessage: ""
     property bool feedbackError: false
+    property int pageSidePadding: root.availableWidth < 860 ? Theme.spacingL : Theme.spacingXXL
+    property int actionButtonWidth: root.availableWidth < 680
+                                    ? Math.max(220, root.availableWidth - pageSidePadding * 2)
+                                    : 240
 
     contentWidth: availableWidth
     contentHeight: contentColumn.implicitHeight
@@ -48,7 +52,7 @@ ScrollView {
 
             Button {
                 anchors.left: parent.left
-                anchors.leftMargin: Theme.spacingXXL
+                anchors.leftMargin: root.pageSidePadding
                 anchors.verticalCenter: parent.verticalCenter
                 text: "\u2190 Назад"
                 flat: true
@@ -84,8 +88,8 @@ ScrollView {
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.spacingXXL
-                Layout.rightMargin: Theme.spacingXXL
+                Layout.leftMargin: root.pageSidePadding
+                Layout.rightMargin: root.pageSidePadding
                 spacing: Theme.spacingXXL
 
                 Rectangle {
@@ -265,8 +269,8 @@ ScrollView {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.spacingXXL
-                Layout.rightMargin: Theme.spacingXXL
+                Layout.leftMargin: root.pageSidePadding
+                Layout.rightMargin: root.pageSidePadding
                 spacing: Theme.spacingS
 
                 Label {
@@ -288,162 +292,249 @@ ScrollView {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.spacingXXL
-                Layout.rightMargin: Theme.spacingXXL
+                Layout.leftMargin: root.pageSidePadding
+                Layout.rightMargin: root.pageSidePadding
                 spacing: Theme.spacingM
-
-                Label {
-                    text: "Залишити відгук"
-                    font.family: Theme.fontDisplay.family
-                    font.pixelSize: 24
-                    color: Theme.textPrimary
-                }
-
-                RowLayout {
-                    spacing: Theme.spacingM
-
-                    Label {
-                        text: "Ваша оцінка:"
-                        color: Theme.textSecondary
-                        font.pixelSize: 14
-                    }
-
-                    StarRating {
-                        id: editorRating
-                        rating: root.selectedRating
-                        maximumRating: 5
-                        interactive: true
-                        starSize: 20
-                        onRatingSelected: root.selectedRating = newRating
-                    }
-                }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    color: "transparent"
+                    color: Theme.glassPanel
                     border.color: Theme.borderLight
                     border.width: 1
                     radius: Theme.radiusSoft
 
-                    TextArea {
-                        id: commentInput
+                    implicitHeight: reviewEditorContent.implicitHeight + Theme.spacingL * 2
+
+                    ColumnLayout {
+                        id: reviewEditorContent
                         anchors.fill: parent
-                        anchors.margins: Theme.spacingS
-                        placeholderText: "Напишіть ваш відгук про цю книгу"
-                        placeholderTextColor: Theme.textMuted
-                        color: Theme.textPrimary
-                        wrapMode: TextArea.Wrap
-                        selectByMouse: true
-                        font.family: Theme.fontBody.family
-                        font.pixelSize: 14
-                        background: Rectangle { color: "transparent" }
-                    }
-                }
+                        anchors.margins: Theme.spacingL
+                        spacing: Theme.spacingM
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingM
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingM
 
-                    Rectangle {
-                        Layout.preferredWidth: 220
-                        Layout.preferredHeight: 46
-                        color: sendArea.containsMouse ? Theme.accentWhite : "transparent"
-                        border.color: Theme.accentWhite
-                        border.width: 1
-                        radius: Theme.radiusSharp
-                        opacity: (commentInput.text.trim().length > 0 && appContext.currentCustomerId > 0) ? 1.0 : 0.5
+                            Label {
+                                text: "Залишити відгук"
+                                font.family: Theme.fontDisplay.family
+                                font.pixelSize: 24
+                                color: Theme.textPrimary
+                            }
 
-                        Behavior on color {
-                            ColorAnimation { duration: Theme.animationFast }
+                            Item { Layout.fillWidth: true }
+
+                            Label {
+                                visible: appContext && appContext.loggedIn
+                                text: "Ваш голос допомагає іншим читачам"
+                                color: Theme.textMuted
+                                font.family: Theme.fontCaption.family
+                                font.pixelSize: 10
+                                font.capitalization: Font.AllUppercase
+                                font.letterSpacing: 1
+                            }
                         }
 
                         Label {
-                            anchors.centerIn: parent
-                            text: "Надіслати відгук"
+                            visible: !(appContext && appContext.loggedIn)
+                            Layout.fillWidth: true
+                            text: "Увійдіть у профіль, щоб оцінити книгу та поділитися враженнями."
+                            color: Theme.textSecondary
                             font.family: Theme.fontBody.family
-                            font.pixelSize: 12
-                            font.capitalization: Font.AllUppercase
-                            font.letterSpacing: 1
-                            color: sendArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
                         }
 
-                        MouseArea {
-                            id: sendArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            enabled: commentInput.text.trim().length > 0 && appContext.currentCustomerId > 0
-                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        ColumnLayout {
+                            visible: appContext && appContext.loggedIn
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingM
 
-                            onClicked: {
-                                var ok = bookDetailsModel.submitComment(appContext.currentCustomerId, commentInput.text, root.selectedRating)
-                                root.feedbackError = !ok
-                                root.feedbackMessage = ok
-                                        ? "Відгук успішно додано"
-                                        : "Не вдалося додати відгук"
-                                if (ok) {
-                                    commentInput.text = ""
-                                    root.selectedRating = 5
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                Label {
+                                    text: "Ваша оцінка:"
+                                    color: Theme.textSecondary
+                                    font.pixelSize: 14
+                                }
+
+                                StarRating {
+                                    id: editorRating
+                                    rating: root.selectedRating
+                                    maximumRating: 5
+                                    interactive: true
+                                    starSize: 20
+                                    onRatingSelected: root.selectedRating = newRating
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Label {
+                                    text: commentInput.text.trim().length > 0
+                                          ? commentInput.text.trim().length + " символів"
+                                          : "Додайте короткий відгук"
+                                    color: Theme.textMuted
+                                    font.pixelSize: 12
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 150
+                                color: "transparent"
+                                border.color: Theme.borderLight
+                                border.width: 1
+                                radius: Theme.radiusSoft
+
+                                TextArea {
+                                    id: commentInput
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingS
+                                    placeholderText: "Напишіть ваш відгук про цю книгу"
+                                    placeholderTextColor: Theme.textMuted
+                                    color: Theme.textPrimary
+                                    wrapMode: TextArea.Wrap
+                                    selectByMouse: true
+                                    font.family: Theme.fontBody.family
+                                    font.pixelSize: 14
+                                    background: Rectangle { color: "transparent" }
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                Rectangle {
+                                    Layout.preferredWidth: root.actionButtonWidth
+                                    Layout.preferredHeight: 46
+                                    color: sendArea.containsMouse ? Theme.accentWhite : "transparent"
+                                    border.color: Theme.accentWhite
+                                    border.width: 1
+                                    radius: Theme.radiusSharp
+                                    opacity: (commentInput.text.trim().length > 0 && appContext.currentCustomerId > 0) ? 1.0 : 0.5
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: Theme.animationFast }
+                                    }
+
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "Надіслати відгук"
+                                        font.family: Theme.fontBody.family
+                                        font.pixelSize: 12
+                                        font.capitalization: Font.AllUppercase
+                                        font.letterSpacing: 1
+                                        color: sendArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                                    }
+
+                                    MouseArea {
+                                        id: sendArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        enabled: commentInput.text.trim().length > 0 && appContext.currentCustomerId > 0
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+
+                                        onClicked: {
+                                            var ok = bookDetailsModel.submitComment(appContext.currentCustomerId, commentInput.text, root.selectedRating)
+                                            root.feedbackError = !ok
+                                            root.feedbackMessage = ok
+                                                    ? "Відгук успішно додано"
+                                                    : "Не вдалося додати відгук"
+                                            if (ok) {
+                                                commentInput.text = ""
+                                                root.selectedRating = 5
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Label {
+                                    Layout.fillWidth: true
+                                    visible: root.feedbackMessage.length > 0
+                                    text: root.feedbackMessage
+                                    color: root.feedbackError ? Theme.error : Theme.success
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
                                 }
                             }
                         }
-                    }
 
-                    Label {
-                        Layout.fillWidth: true
-                        visible: root.feedbackMessage.length > 0
-                        text: root.feedbackMessage
-                        color: root.feedbackError ? Theme.error : Theme.success
-                        font.pixelSize: 12
-                        wrapMode: Text.Wrap
-                    }
-                }
+                        Rectangle {
+                            visible: !(appContext && appContext.loggedIn)
+                            Layout.preferredWidth: root.actionButtonWidth
+                            Layout.preferredHeight: 46
+                            color: loginForCommentArea.containsMouse ? Theme.accentWhite : "transparent"
+                            border.color: Theme.accentWhite
+                            border.width: 1
+                            radius: Theme.radiusSharp
 
-                Rectangle {
-                    visible: !(appContext && appContext.loggedIn)
-                    Layout.topMargin: 6
-                    Layout.preferredWidth: 260
-                    Layout.preferredHeight: 46
-                    color: loginForCommentArea.containsMouse ? Theme.accentWhite : "transparent"
-                    border.color: Theme.accentWhite
-                    border.width: 1
-                    radius: Theme.radiusSharp
+                            Behavior on color {
+                                ColorAnimation { duration: Theme.animationFast }
+                            }
 
-                    Behavior on color {
-                        ColorAnimation { duration: Theme.animationFast }
-                    }
+                            Label {
+                                anchors.centerIn: parent
+                                text: "Увійти, щоб залишити відгук"
+                                font.family: Theme.fontBody.family
+                                font.pixelSize: 12
+                                font.capitalization: Font.AllUppercase
+                                font.letterSpacing: 1
+                                color: loginForCommentArea.containsMouse ? Theme.bgBody : Theme.textPrimary
+                            }
 
-                    Label {
-                        anchors.centerIn: parent
-                        text: "Увійти, щоб залишити відгук"
-                        font.family: Theme.fontBody.family
-                        font.pixelSize: 12
-                        font.capitalization: Font.AllUppercase
-                        font.letterSpacing: 1
-                        color: loginForCommentArea.containsMouse ? Theme.bgBody : Theme.textPrimary
-                    }
+                            MouseArea {
+                                id: loginForCommentArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: appContext.navigateTo("profile")
+                            }
+                        }
 
-                    MouseArea {
-                        id: loginForCommentArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: appContext.navigateTo("profile")
+                        Label {
+                            Layout.fillWidth: true
+                            visible: root.feedbackMessage.length > 0 && !(appContext && appContext.loggedIn)
+                            text: root.feedbackMessage
+                            color: root.feedbackError ? Theme.error : Theme.success
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
                     }
                 }
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.spacingXXL
-                Layout.rightMargin: Theme.spacingXXL
+                Layout.leftMargin: root.pageSidePadding
+                Layout.rightMargin: root.pageSidePadding
                 spacing: Theme.spacingM
 
-                Label {
-                    text: "Відгуки"
-                    font.family: Theme.fontDisplay.family
-                    font.pixelSize: 24
-                    color: Theme.textPrimary
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+
+                    Label {
+                        text: "Відгуки"
+                        font.family: Theme.fontDisplay.family
+                        font.pixelSize: 24
+                        color: Theme.textPrimary
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Label {
+                        text: bookDetailsModel.comments.length > 0
+                              ? bookDetailsModel.comments.length + " відгуків"
+                              : "Поки без відгуків"
+                        color: Theme.textMuted
+                        font.family: Theme.fontCaption.family
+                        font.pixelSize: 10
+                        font.capitalization: Font.AllUppercase
+                        font.letterSpacing: 1
+                    }
                 }
 
                 Label {
@@ -457,7 +548,7 @@ ScrollView {
                     model: bookDetailsModel.comments
 
                     CommentItem {
-                        width: parent ? parent.width : 400
+                        Layout.fillWidth: true
                         authorName: modelData.authorName
                         commentDate: modelData.commentDate
                         rating: modelData.rating
@@ -468,8 +559,8 @@ ScrollView {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.spacingXXL
-                Layout.rightMargin: Theme.spacingXXL
+                Layout.leftMargin: root.pageSidePadding
+                Layout.rightMargin: root.pageSidePadding
                 spacing: Theme.spacingM
 
                 Label {
@@ -482,7 +573,7 @@ ScrollView {
                 Flow {
                     id: similarBooksFlow
                     Layout.fillWidth: true
-                    width: Math.max(0, root.availableWidth - Theme.spacingXXL * 2)
+                    width: Math.max(0, root.availableWidth - root.pageSidePadding * 2)
                     spacing: Theme.spacingXL
                     flow: Flow.LeftToRight
 

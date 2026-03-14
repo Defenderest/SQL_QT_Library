@@ -117,9 +117,44 @@ bool DatabaseManager::checkAndInitDatabase()
         )
     };
 
+    const QStringList reservationMigrations = {
+        QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS book_reservation ("
+            "reservation_id SERIAL PRIMARY KEY, "
+            "customer_id INTEGER NOT NULL, "
+            "provider_order_id VARCHAR(128) NOT NULL UNIQUE, "
+            "order_id INTEGER, "
+            "status VARCHAR(32) NOT NULL, "
+            "expires_at TIMESTAMPTZ NOT NULL, "
+            "created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "CONSTRAINT fk_book_reservation_customer FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE, "
+            "CONSTRAINT fk_book_reservation_order FOREIGN KEY (order_id) REFERENCES \"order\"(order_id) ON DELETE SET NULL"
+            ");"
+        ),
+        QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS book_reservation_item ("
+            "reservation_item_id SERIAL PRIMARY KEY, "
+            "reservation_id INTEGER NOT NULL, "
+            "book_id INTEGER NOT NULL, "
+            "quantity INTEGER NOT NULL CHECK (quantity > 0), "
+            "CONSTRAINT fk_book_reservation_item_reservation FOREIGN KEY (reservation_id) REFERENCES book_reservation(reservation_id) ON DELETE CASCADE, "
+            "CONSTRAINT fk_book_reservation_item_book FOREIGN KEY (book_id) REFERENCES book(book_id) ON DELETE RESTRICT, "
+            "CONSTRAINT uq_book_reservation_item UNIQUE (reservation_id, book_id)"
+            ");"
+        )
+    };
+
     for (const QString& migrationSql : paymentMigrations) {
         if (!migrationQuery.exec(migrationSql)) {
             qWarning() << "Failed to ensure payment table:" << migrationQuery.lastError().text();
+            qWarning() << "SQL:" << migrationSql;
+        }
+    }
+
+    for (const QString& migrationSql : reservationMigrations) {
+        if (!migrationQuery.exec(migrationSql)) {
+            qWarning() << "Failed to ensure reservation table:" << migrationQuery.lastError().text();
             qWarning() << "SQL:" << migrationSql;
         }
     }
@@ -133,7 +168,10 @@ bool DatabaseManager::checkAndInitDatabase()
         "CREATE INDEX IF NOT EXISTS idx_book_title_lower ON book (LOWER(title));",
         "CREATE INDEX IF NOT EXISTS idx_author_full_name_lower ON author (LOWER(first_name || ' ' || last_name));",
         "CREATE INDEX IF NOT EXISTS idx_payment_transaction_provider_order ON payment_transaction (provider_order_id);",
-        "CREATE INDEX IF NOT EXISTS idx_payment_status_history_tx_date ON payment_status_history (payment_transaction_id, status_date DESC);"
+        "CREATE INDEX IF NOT EXISTS idx_payment_status_history_tx_date ON payment_status_history (payment_transaction_id, status_date DESC);",
+        "CREATE INDEX IF NOT EXISTS idx_book_reservation_provider_order ON book_reservation (provider_order_id);",
+        "CREATE INDEX IF NOT EXISTS idx_book_reservation_status_expires ON book_reservation (status, expires_at);",
+        "CREATE INDEX IF NOT EXISTS idx_book_reservation_item_book ON book_reservation_item (book_id);"
     };
 
     for (const QString& indexSql : performanceIndexes) {
@@ -142,6 +180,8 @@ bool DatabaseManager::checkAndInitDatabase()
             qWarning() << "SQL:" << indexSql;
         }
     }
+
+    cleanupExpiredBookReservations();
 
     return true;
 }
@@ -161,6 +201,8 @@ bool DatabaseManager::resetDatabase()
     QStringList dropStatements = {
         "DROP TABLE IF EXISTS payment_status_history CASCADE",
         "DROP TABLE IF EXISTS payment_transaction CASCADE",
+        "DROP TABLE IF EXISTS book_reservation_item CASCADE",
+        "DROP TABLE IF EXISTS book_reservation CASCADE",
         "DROP TABLE IF EXISTS order_status CASCADE",
         "DROP TABLE IF EXISTS order_item CASCADE",
         "DROP TABLE IF EXISTS comment CASCADE",
@@ -270,6 +312,8 @@ bool DatabaseManager::createSchemaTables()
     // Drop tables
     if(success) success &= executeQuery(query, getSqlQuery("DropPaymentStatusHistoryTable"), "Видалення payment_status_history");
     if(success) success &= executeQuery(query, getSqlQuery("DropPaymentTransactionTable"), "Видалення payment_transaction");
+    if(success) success &= executeQuery(query, getSqlQuery("DropBookReservationItemTable"), "Видалення book_reservation_item");
+    if(success) success &= executeQuery(query, getSqlQuery("DropBookReservationTable"), "Видалення book_reservation");
     if(success) success &= executeQuery(query, getSqlQuery("DropOrderStatusTable"), "Видалення order_status");
     if(success) success &= executeQuery(query, getSqlQuery("DropOrderItemTable"),   "Видалення order_item");
     if(success) success &= executeQuery(query, getSqlQuery("DropCommentTable"),     "Видалення comment");
@@ -288,7 +332,9 @@ bool DatabaseManager::createSchemaTables()
     if(success) success &= executeQuery(query, getSqlQuery("CreateBookTable"), "Створення book");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderTable"), "Створення \"order\"");
     if(success) success &= executeQuery(query, getSqlQuery("CreatePaymentTransactionTable"), "Створення payment_transaction");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateBookReservationTable"), "Створення book_reservation");
     if(success) success &= executeQuery(query, getSqlQuery("CreateBookAuthorTable"), "Створення book_author");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateBookReservationItemTable"), "Створення book_reservation_item");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderItemTable"), "Створення order_item");
     if(success) success &= executeQuery(query, getSqlQuery("CreateOrderStatusTable"), "Створення order_status");
     if(success) success &= executeQuery(query, getSqlQuery("CreatePaymentStatusHistoryTable"), "Створення payment_status_history");
@@ -305,6 +351,9 @@ bool DatabaseManager::createSchemaTables()
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexAuthorFullNameLower"), "Створення індексу idx_author_full_name_lower");
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexPaymentTransactionProviderOrder"), "Створення індексу idx_payment_transaction_provider_order");
     if(success) success &= executeQuery(query, getSqlQuery("CreateIndexPaymentStatusHistoryTransactionDate"), "Створення індексу idx_payment_status_history_tx_date");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookReservationProviderOrder"), "Створення індексу idx_book_reservation_provider_order");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookReservationStatusExpires"), "Створення індексу idx_book_reservation_status_expires");
+    if(success) success &= executeQuery(query, getSqlQuery("CreateIndexBookReservationItemBook"), "Створення індексу idx_book_reservation_item_book");
 
     // Create functions and triggers
     if(success) success &= executeQuery(query, getSqlQuery("CreateCalculateAverageRatingFunction"), "Створення функції calculate_average_book_rating");
@@ -405,6 +454,7 @@ void DatabaseManager::closeConnection()
          qInfo() << "З'єднання" << m_db.connectionName() << "видалено з пулу.";
     }
     m_isConnected = false;
+    m_lastReservationCleanup = QDateTime();
 }
 
 bool DatabaseManager::printAllData() const

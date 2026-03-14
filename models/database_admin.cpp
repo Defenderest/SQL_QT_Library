@@ -142,6 +142,39 @@ bool DatabaseManager::updateBookByAdmin(int bookId,
     return query.numRowsAffected() > 0;
 }
 
+bool DatabaseManager::increaseBookStockByAdmin(int bookId, int quantityToAdd)
+{
+    if (!m_isConnected || !m_db.isOpen()) {
+        qWarning() << "Cannot increase stock: no database connection.";
+        return false;
+    }
+    if (bookId <= 0 || quantityToAdd <= 0) {
+        qWarning() << "Cannot increase stock: invalid data.";
+        return false;
+    }
+
+    const QString sql = getSqlQuery("IncreaseBookStockAdmin");
+    if (sql.isEmpty()) {
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+    if (!query.prepare(sql)) {
+        qCritical() << "Failed to prepare 'IncreaseBookStockAdmin':" << query.lastError().text();
+        return false;
+    }
+
+    query.bindValue(":book_id", bookId);
+    query.bindValue(":quantity_to_add", quantityToAdd);
+
+    if (!query.exec()) {
+        qCritical() << "Failed to execute 'IncreaseBookStockAdmin':" << query.lastError().text();
+        return false;
+    }
+
+    return query.numRowsAffected() > 0;
+}
+
 bool DatabaseManager::updateBookPriceByAdmin(int bookId, double price)
 {
     if (!m_isConnected || !m_db.isOpen()) {
